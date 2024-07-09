@@ -7,7 +7,7 @@ ENV LANG='en_US.UTF-8' \
     LC_ALL='en_US.UTF-8'
 
 # SonarQube setup
-ARG SONARQUBE_VERSION=latest
+ARG SONARQUBE_VERSION=10.3.0.82913
 ARG SONARQUBE_ZIP_URL=https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip
 ARG PLUGIN_VERSION=1.14.0
 ARG PLUGIN_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${PLUGIN_VERSION}/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar
@@ -32,17 +32,20 @@ RUN set -eux; \
     groupadd --system --gid 1000 sonarqube; \
     useradd --system --uid 1000 --gid sonarqube sonarqube; \
     apt-get update; \
-    apt-get --no-install-recommends -y install gnupg unzip curl bash fonts-dejavu; \
-    echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
-    sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
-    for server in $(shuf -e hkps://keys.openpgp.org \
+    apt-get --no-install-recommends -y install gnupg unzip curl bash fonts-dejavu
+
+RUN echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
+    sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"
+
+RUN for server in $(shuf -e hkps://keys.openpgp.org \
                             hkps://keyserver.ubuntu.com) ; do \
         gpg --batch --keyserver "${server}" --recv-keys 679F1EE92B19609DE816FDE81DB198F93525EC1A && break || : ; \
-    done; \
-    mkdir --parents /opt; \
+    done
+
+RUN mkdir --parents /opt; \
     cd /opt; \
-    curl --fail --location --output sonarqube.zip --silent --show-error "${SONARQUBE_ZIP_URL}"; \
-    curl --fail --location --output sonarqube.zip.asc --silent --show-error "${SONARQUBE_ZIP_URL}.asc"; \
+    curl --fail --location --output sonarqube.zip --silent --show-error "${SONARQUBE_ZIP_URL}" || (echo "Failed to download SonarQube" && exit 1); \
+    curl --fail --location --output sonarqube.zip.asc --silent --show-error "${SONARQUBE_ZIP_URL}.asc" || (echo "Failed to download SonarQube signature" && exit 1); \
     gpg --batch --verify sonarqube.zip.asc sonarqube.zip; \
     unzip -q sonarqube.zip; \
     mv "sonarqube-${SONARQUBE_VERSION}" sonarqube; \
@@ -50,13 +53,15 @@ RUN set -eux; \
     rm -rf ${SONARQUBE_HOME}/bin/*; \
     ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
     chmod -R 555 ${SONARQUBE_HOME}; \
-    chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar "${REPORT_PLUGIN_URL}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar "${LDAP_PLUGIN_URL}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar "${GITHUB_PLUGIN_URL}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}"; \
-    apt-get remove -y gnupg unzip curl; \
+    chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"
+
+RUN curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}" || (echo "Failed to download community branch plugin" && exit 1); \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar "${REPORT_PLUGIN_URL}" || (echo "Failed to download report plugin" && exit 1); \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar "${LDAP_PLUGIN_URL}" || (echo "Failed to download LDAP plugin" && exit 1); \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar "${GITHUB_PLUGIN_URL}" || (echo "Failed to download GitHub plugin" && exit 1); \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}" || (echo "Failed to download GitLab plugin" && exit 1)
+
+RUN apt-get remove -y gnupg unzip curl; \
     rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
