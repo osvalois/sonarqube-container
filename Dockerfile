@@ -1,7 +1,7 @@
 FROM eclipse-temurin:17.0.6_10-jre
 
 LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
-LABEL org.opencontainers.image.description="SonarQube Docker image with CNES Report, Community Branch, and GitLab plugins"
+LABEL org.opencontainers.image.description="SonarQube Docker image with CNES Report, Community Branch, GitLab, SonarCXX, ESLint SonarJS, and Dependency-Check plugins"
 LABEL maintainer="Oscar Valois osvaloismtz@gmail.com"
 
 ENV LANG='en_US.UTF-8' \
@@ -22,6 +22,18 @@ ARG COMMUNITY_BRANCH_URL=https://github.com/mc1arke/sonarqube-community-branch-p
 # GitLab plugin
 ARG GITLAB_PLUGIN_VERSION=4.6.0
 ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/${GITLAB_PLUGIN_VERSION}/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar
+
+# SonarCXX plugin
+ARG SONARCXX_VERSION=2.1.1
+ARG SONARCXX_URL=https://github.com/SonarOpenCommunity/sonar-cxx/releases/download/cxx-${SONARCXX_VERSION}/sonar-cxx-plugin-${SONARCXX_VERSION}.jar
+
+# ESLint Plugin SonarJS
+ARG ESLINT_SONARJS_VERSION=1.0.3
+ARG ESLINT_SONARJS_URL=https://github.com/SonarSource/eslint-plugin-sonarjs/releases/download/${ESLINT_SONARJS_VERSION}/eslint-plugin-sonarjs-${ESLINT_SONARJS_VERSION}.tgz
+
+# Dependency-Check Plugin
+ARG DEPENDENCY_CHECK_VERSION=5.0.0
+ARG DEPENDENCY_CHECK_URL=https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/sonar-dependency-check-${DEPENDENCY_CHECK_VERSION}/sonar-dependency-check-plugin-${DEPENDENCY_CHECK_VERSION}.jar
 
 ENV JAVA_HOME='/opt/java/openjdk' \
     SONARQUBE_HOME=/opt/sonarqube \
@@ -51,6 +63,9 @@ RUN set -eux; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-cnes-report-${CNES_REPORT_VERSION}.jar "${CNES_REPORT_URL}" || echo "Failed to download CNES Report plugin"; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${COMMUNITY_BRANCH_VERSION}.jar "${COMMUNITY_BRANCH_URL}" || echo "Failed to download Community Branch plugin"; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}" || echo "Failed to download GitLab plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-cxx-plugin-${SONARCXX_VERSION}.jar "${SONARCXX_URL}" || echo "Failed to download SonarCXX plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/eslint-plugin-sonarjs-${ESLINT_SONARJS_VERSION}.tgz "${ESLINT_SONARJS_URL}" || echo "Failed to download ESLint Plugin SonarJS"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-dependency-check-plugin-${DEPENDENCY_CHECK_VERSION}.jar "${DEPENDENCY_CHECK_URL}" || echo "Failed to download Dependency-Check plugin"; \
     apt-get remove -y gnupg unzip curl; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*;

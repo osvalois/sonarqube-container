@@ -1,4 +1,4 @@
-# SonarQube Docker Deployment - Enterprise-Grade Solution
+# SonarQube Docker
 
 This repository contains the configuration files and instructions for deploying a customized SonarQube Community Edition server using Docker. Our setup includes additional plugins and configurations to enhance the capabilities of SonarQube for enterprise use.
 
@@ -11,11 +11,12 @@ This repository contains the configuration files and instructions for deploying 
 - **Version Flexibility**: Allows dynamic specification of SonarQube version.
 - **Enhanced Plugins**: Includes additional plugins for extended functionality:
   1. [sonarqube-community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin)
-  2. [sonar-report-plugin](https://github.com/SonarSource/sonar-report)
-  3. [sonarqube-enterprise-auth](https://github.com/SonarSource/sonarqube-enterprise-auth)
-  4. [sonar-github-plugin](https://github.com/SonarSource/sonar-github)
-  5. [sonar-gitlab-plugin](https://github.com/gabrie-allaigre/sonar-gitlab-plugin)
-
+  2. [sonar-cnes-report](https://github.com/cnescatlab/sonar-cnes-report)
+  3. [sonar-gitlab-plugin](https://github.com/gabrie-allaigre/sonar-gitlab-plugin)
+  4. [sonar-cxx-plugin](https://github.com/SonarOpenCommunity/sonar-cxx)
+  5. [eslint-plugin-sonarjs](https://github.com/SonarSource/eslint-plugin-sonarjs)
+  6. [dependency-check-sonar-plugin](https://github.com/dependency-check/dependency-check-sonar-plugin)
+  
 ## Prerequisites
 
 - Docker and Docker Compose installed on your local machine.
