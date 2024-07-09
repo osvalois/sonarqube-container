@@ -15,6 +15,10 @@ ARG PLUGIN_VERSION=1.14.0
 ARG PLUGIN_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${PLUGIN_VERSION}/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar
 ARG SONAR_REPORT_PLUGIN_VERSION=1.7.1
 ARG SONAR_REPORT_PLUGIN_URL=https://github.com/SonarSource/sonar-report/releases/download/${SONAR_REPORT_PLUGIN_VERSION}/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar
+ARG ENTERPRISE_AUTH_PLUGIN_VERSION=1.9.0
+ARG ENTERPRISE_AUTH_PLUGIN_URL=https://github.com/SonarSource/sonarqube-enterprise-auth/releases/download/${ENTERPRISE_AUTH_PLUGIN_VERSION}/sonar-enterprise-auth-plugin-${ENTERPRISE_AUTH_PLUGIN_VERSION}.jar
+ARG GITHUB_PLUGIN_VERSION=1.13.0
+ARG GITHUB_PLUGIN_URL=https://github.com/SonarSource/sonar-github/releases/download/${GITHUB_PLUGIN_VERSION}/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar
 
 ENV JAVA_HOME='/opt/java/openjdk' \
     SONARQUBE_HOME=/opt/sonarqube \
@@ -55,6 +59,8 @@ RUN set -eux; \
     mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}" || echo "Failed to download community branch plugin"; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar "${SONAR_REPORT_PLUGIN_URL}" || echo "Failed to download report plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-enterprise-auth-plugin-${ENTERPRISE_AUTH_PLUGIN_VERSION}.jar "${ENTERPRISE_AUTH_PLUGIN_URL}" || echo "Failed to download enterprise-grade authentication plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar "${GITHUB_PLUGIN_URL}" || echo "Failed to download GitHub plugin"; \
     apt-get remove -y gnupg unzip curl; \
     rm -rf /var/lib/apt/lists/*;
 
