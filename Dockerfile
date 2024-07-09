@@ -15,10 +15,6 @@ ARG REPORT_PLUGIN_VERSION=5.3.4
 ARG REPORT_PLUGIN_URL=https://github.com/SonarSource/sonar-report-plugin/releases/download/${REPORT_PLUGIN_VERSION}/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar
 ARG LDAP_PLUGIN_VERSION=2.3.0
 ARG LDAP_PLUGIN_URL=https://github.com/SonarSource/sonar-ldap/releases/download/${LDAP_PLUGIN_VERSION}/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar
-ARG GITHUB_PLUGIN_VERSION=1.9.0
-ARG GITHUB_PLUGIN_URL=https://github.com/SonarSource/sonar-github/releases/download/${GITHUB_PLUGIN_VERSION}/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar
-ARG GITLAB_PLUGIN_VERSION=4.7.0
-ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/${GITLAB_PLUGIN_VERSION}/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar
 
 ENV JAVA_HOME='/opt/java/openjdk' \
     SONARQUBE_HOME=/opt/sonarqube \
@@ -55,11 +51,14 @@ RUN mkdir --parents /opt; \
     chmod -R 555 ${SONARQUBE_HOME}; \
     chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"
 
-RUN curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}" || (echo "Failed to download community branch plugin" && exit 1); \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar "${REPORT_PLUGIN_URL}" || (echo "Failed to download report plugin" && exit 1); \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar "${LDAP_PLUGIN_URL}" || (echo "Failed to download LDAP plugin" && exit 1); \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar "${GITHUB_PLUGIN_URL}" || (echo "Failed to download GitHub plugin" && exit 1); \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}" || (echo "Failed to download GitLab plugin" && exit 1)
+RUN mkdir -p ${SQ_EXTENSIONS_DIR}/plugins && \
+    cd ${SQ_EXTENSIONS_DIR}/plugins && \
+    echo "Downloading community branch plugin..." && \
+    curl --fail --location --output sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}" || (echo "Failed to download community branch plugin" && exit 1) && \
+    echo "Downloading report plugin..." && \
+    curl --fail --location --output sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar "${REPORT_PLUGIN_URL}" || (echo "Failed to download report plugin" && exit 1) && \
+    echo "Downloading LDAP plugin..." && \
+    curl --fail --location --output sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar "${LDAP_PLUGIN_URL}" || (echo "Failed to download LDAP plugin" && exit 1)
 
 RUN apt-get remove -y gnupg unzip curl; \
     rm -rf /var/lib/apt/lists/*
@@ -77,5 +76,5 @@ STOPSIGNAL SIGINT
 
 ENTRYPOINT ["/opt/sonarqube/docker/entrypoint.sh"]
 
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar=ce"
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar=web -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar=web"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${REPORT_PLUGIN_VERSION}.jar=ce -javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonar-ldap-plugin-${LDAP_PLUGIN_VERSION}.jar=ce"
