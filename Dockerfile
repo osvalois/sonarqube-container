@@ -1,7 +1,7 @@
 FROM eclipse-temurin:17.0.6_10-jre
 
 LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
-LABEL org.opencontainers.image.description="SonarQube Docker image with additional plugins"
+LABEL org.opencontainers.image.description="SonarQube Docker image with CNES Report, Community Branch, and GitLab plugins"
 LABEL maintainer="Oscar Valois osvaloismtz@gmail.com"
 
 ENV LANG='en_US.UTF-8' \
@@ -10,14 +10,16 @@ ENV LANG='en_US.UTF-8' \
 
 ENV SONARQUBE_VERSION=${SONARQUBE_VERSION:-9.9.4.87374}
 ARG SONARQUBE_ZIP_URL=https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip
-ARG PLUGIN_VERSION=1.14.0
-ARG PLUGIN_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${PLUGIN_VERSION}/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar
-ARG SONAR_REPORT_PLUGIN_VERSION=1.7.1
-ARG SONAR_REPORT_PLUGIN_URL=https://github.com/SonarSource/sonar-report/releases/download/${SONAR_REPORT_PLUGIN_VERSION}/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar
-ARG ENTERPRISE_AUTH_PLUGIN_VERSION=1.9.0
-ARG ENTERPRISE_AUTH_PLUGIN_URL=https://github.com/SonarSource/sonarqube-enterprise-auth/releases/download/${ENTERPRISE_AUTH_PLUGIN_VERSION}/sonar-enterprise-auth-plugin-${ENTERPRISE_AUTH_PLUGIN_VERSION}.jar
-ARG GITHUB_PLUGIN_VERSION=1.13.0
-ARG GITHUB_PLUGIN_URL=https://github.com/SonarSource/sonar-github/releases/download/${GITHUB_PLUGIN_VERSION}/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar
+
+# CNES Report plugin
+ARG CNES_REPORT_VERSION=4.3.0
+ARG CNES_REPORT_URL=https://github.com/cnescatlab/sonar-cnes-report/releases/download/${CNES_REPORT_VERSION}/sonar-cnes-report-${CNES_REPORT_VERSION}.jar
+
+# Community Branch plugin
+ARG COMMUNITY_BRANCH_VERSION=1.14.0
+ARG COMMUNITY_BRANCH_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${COMMUNITY_BRANCH_VERSION}/sonarqube-community-branch-plugin-${COMMUNITY_BRANCH_VERSION}.jar
+
+# GitLab plugin
 ARG GITLAB_PLUGIN_VERSION=4.6.0
 ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/${GITLAB_PLUGIN_VERSION}/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar
 
@@ -46,9 +48,9 @@ RUN set -eux; \
     chmod -R 555 ${SONARQUBE_HOME}; \
     chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
     mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
-    for plugin_url in "${PLUGIN_URL}" "${SONAR_REPORT_PLUGIN_URL}" "${ENTERPRISE_AUTH_PLUGIN_URL}" "${GITHUB_PLUGIN_URL}" "${GITLAB_PLUGIN_URL}"; do \
-        curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/$(basename ${plugin_url}) "${plugin_url}" || echo "Failed to download plugin: ${plugin_url}"; \
-    done; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-cnes-report-${CNES_REPORT_VERSION}.jar "${CNES_REPORT_URL}" || echo "Failed to download CNES Report plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${COMMUNITY_BRANCH_VERSION}.jar "${COMMUNITY_BRANCH_URL}" || echo "Failed to download Community Branch plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}" || echo "Failed to download GitLab plugin"; \
     apt-get remove -y gnupg unzip curl; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*;
@@ -67,5 +69,5 @@ STOPSIGNAL SIGINT
 
 ENTRYPOINT ["/opt/sonarqube/docker/entrypoint.sh"]
 
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce"
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${COMMUNITY_BRANCH_VERSION}.jar=web"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${COMMUNITY_BRANCH_VERSION}.jar=ce"
