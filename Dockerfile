@@ -37,18 +37,24 @@ RUN set -eux; \
     done; \
     mkdir --parents /opt; \
     cd /opt; \
-    curl --fail --location --output sonarqube.zip --silent --show-error "${SONARQUBE_ZIP_URL}"; \
-    curl --fail --location --output sonarqube.zip.asc --silent --show-error "${SONARQUBE_ZIP_URL}.asc"; \
-    gpg --batch --verify sonarqube.zip.asc sonarqube.zip; \
-    unzip -q sonarqube.zip; \
-    mv "sonarqube-${SONARQUBE_VERSION}" sonarqube; \
-    rm sonarqube.zip*; \
-    rm -rf ${SONARQUBE_HOME}/bin/*; \
-    ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
-    chmod -R 555 ${SONARQUBE_HOME}; \
-    chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}"; \
-    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar "${SONAR_REPORT_PLUGIN_URL}"; \
+    curl --fail --location --output sonarqube.zip --silent --show-error "${SONARQUBE_ZIP_URL}" || echo "Failed to download SonarQube"; \
+    curl --fail --location --output sonarqube.zip.asc --silent --show-error "${SONARQUBE_ZIP_URL}.asc" || echo "Failed to download SonarQube signature"; \
+    if [ -f sonarqube.zip ] && [ -f sonarqube.zip.asc ]; then \
+        gpg --batch --verify sonarqube.zip.asc sonarqube.zip; \
+        unzip -q sonarqube.zip; \
+        mv "sonarqube-${SONARQUBE_VERSION}" sonarqube; \
+        rm sonarqube.zip*; \
+        rm -rf ${SONARQUBE_HOME}/bin/*; \
+        ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
+        chmod -R 555 ${SONARQUBE_HOME}; \
+        chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
+    else \
+        echo "SonarQube download failed. Please check the URLs and try again."; \
+        exit 1; \
+    fi; \
+    mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar "${PLUGIN_URL}" || echo "Failed to download community branch plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar "${SONAR_REPORT_PLUGIN_URL}" || echo "Failed to download report plugin"; \
     apt-get remove -y gnupg unzip curl; \
     rm -rf /var/lib/apt/lists/*;
 
