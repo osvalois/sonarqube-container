@@ -19,6 +19,8 @@ ARG ENTERPRISE_AUTH_PLUGIN_VERSION=1.9.0
 ARG ENTERPRISE_AUTH_PLUGIN_URL=https://github.com/SonarSource/sonarqube-enterprise-auth/releases/download/${ENTERPRISE_AUTH_PLUGIN_VERSION}/sonar-enterprise-auth-plugin-${ENTERPRISE_AUTH_PLUGIN_VERSION}.jar
 ARG GITHUB_PLUGIN_VERSION=1.13.0
 ARG GITHUB_PLUGIN_URL=https://github.com/SonarSource/sonar-github/releases/download/${GITHUB_PLUGIN_VERSION}/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar
+ARG GITLAB_PLUGIN_VERSION=4.6.0
+ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/${GITLAB_PLUGIN_VERSION}/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar
 
 ENV JAVA_HOME='/opt/java/openjdk' \
     SONARQUBE_HOME=/opt/sonarqube \
@@ -61,6 +63,7 @@ RUN set -eux; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-report-plugin-${SONAR_REPORT_PLUGIN_VERSION}.jar "${SONAR_REPORT_PLUGIN_URL}" || echo "Failed to download report plugin"; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-enterprise-auth-plugin-${ENTERPRISE_AUTH_PLUGIN_VERSION}.jar "${ENTERPRISE_AUTH_PLUGIN_URL}" || echo "Failed to download enterprise-grade authentication plugin"; \
     curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-github-plugin-${GITHUB_PLUGIN_VERSION}.jar "${GITHUB_PLUGIN_URL}" || echo "Failed to download GitHub plugin"; \
+    curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/sonar-gitlab-plugin-${GITLAB_PLUGIN_VERSION}.jar "${GITLAB_PLUGIN_URL}" || echo "Failed to download GitLab plugin"; \
     apt-get remove -y gnupg unzip curl; \
     rm -rf /var/lib/apt/lists/*;
 
