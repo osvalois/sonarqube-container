@@ -37,14 +37,14 @@ ARG CNES_REPORT_URL=https://github.com/cnescatlab/sonar-cnes-report/releases/dow
 
 # Install dependencies, download and set up SonarQube and plugins
 RUN set -eux; \
-    groupadd --system --gid 1000 sonarqube; \
-    useradd --system --uid 1000 --gid sonarqube sonarqube; \
     apt-get update && apt-get install -y --no-install-recommends \
         gnupg \
         unzip \
         curl \
         bash \
         fonts-dejavu; \
+    groupadd --system --gid 1000 sonarqube; \
+    useradd --system --uid 1000 --gid sonarqube sonarqube; \
     echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
     sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
     mkdir --parents /opt; \
@@ -56,16 +56,18 @@ RUN set -eux; \
     rm -rf ${SONARQUBE_HOME}/bin/*; \
     ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
     chmod -R 555 ${SONARQUBE_HOME}; \
+    mkdir -p "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
     chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
     mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
     for plugin in "${CNES_REPORT_URL}" "${COMMUNITY_BRANCH_URL}" "${GITLAB_PLUGIN_URL}" "${SONARCXX_URL}" "${ESLINT_SONARJS_URL}" "${DEPENDENCY_CHECK_URL}"; do \
         curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/$(basename ${plugin}) "${plugin}" || echo "Failed to download plugin: ${plugin}"; \
     done; \
+    echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.pdf.report.path=${SQ_DATA_DIR}/report.pdf" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
     apt-get remove -y gnupg unzip curl; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*; \
-    echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.pdf.report.path=${SQ_DATA_DIR}/report.pdf" >> ${SONARQUBE_HOME}/conf/sonar.properties
+    chown -R sonarqube:sonarqube ${SONARQUBE_HOME}
 
 # Copy and set up entrypoint
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
