@@ -43,8 +43,13 @@ RUN set -eux; \
         curl \
         bash \
         fonts-dejavu; \
-    groupadd --system --gid 1000 sonarqube; \
-    useradd --system --uid 1000 --gid sonarqube sonarqube; \
+    # Create sonarqube user and group
+    if getent group sonarqube > /dev/null 2>&1; then \
+        echo "Group sonarqube already exists"; \
+    else \
+        groupadd -r sonarqube; \
+    fi; \
+    useradd -r -g sonarqube -d ${SONARQUBE_HOME} sonarqube; \
     echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
     sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
     mkdir --parents /opt; \
@@ -57,7 +62,7 @@ RUN set -eux; \
     ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
     chmod -R 555 ${SONARQUBE_HOME}; \
     mkdir -p "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
-    chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
+    chmod -R 777 "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
     mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
     for plugin in "${CNES_REPORT_URL}" "${COMMUNITY_BRANCH_URL}" "${GITLAB_PLUGIN_URL}" "${SONARCXX_URL}" "${ESLINT_SONARJS_URL}" "${DEPENDENCY_CHECK_URL}"; do \
         curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/$(basename ${plugin}) "${plugin}" || echo "Failed to download plugin: ${plugin}"; \
