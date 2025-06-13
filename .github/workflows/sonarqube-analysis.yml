@@ -1,0 +1,123 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: sonar
+          POSTGRES_PASSWORD: sonar
+          POSTGRES_DB: sonar
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache SonarQube packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: Build and start SonarQube
+      run: |
+        docker-compose up -d
+        echo "Waiting for SonarQube to be ready..."
+        timeout 300s bash -c 'until curl -f http://localhost:9000/api/system/status | grep -q "UP"; do sleep 10; done'
+        echo "SonarQube is ready"
+
+    - name: Create SonarQube project
+      run: |
+        # Wait for SonarQube to be fully ready
+        sleep 30
+        
+        # Create project using REST API
+        curl -u admin:admin -X POST \
+          "http://localhost:9000/api/projects/create?project=sonarqube-container&name=SonarQube%20Container"
+        
+        # Set Quality Gate
+        curl -u admin:admin -X POST \
+          "http://localhost:9000/api/qualitygates/select?projectKey=sonarqube-container&gateId=1"
+
+    - name: Run SonarQube Scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: http://localhost:9000
+      run: |
+        # Download and setup SonarQube Scanner
+        wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-linux-x64.zip
+        unzip sonar-scanner-cli-6.2.1.4610-linux-x64.zip
+        export PATH="$PWD/sonar-scanner-6.2.1.4610-linux-x64/bin:$PATH"
+        
+        # Run analysis
+        sonar-scanner \
+          -Dsonar.projectKey=sonarqube-container \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=$SONAR_HOST_URL \
+          -Dsonar.token=admin \
+          -Dsonar.qualitygate.wait=true \
+          -Dsonar.security.cwe.enabled=true \
+          -Dsonar.security.owasp.top10.enabled=true \
+          -Dsonar.security.owasp.mobile.enabled=true
+
+    - name: Quality Gate Check
+      run: |
+        # Check Quality Gate status
+        QUALITY_GATE_STATUS=$(curl -s -u admin:admin \
+          "http://localhost:9000/api/qualitygates/project_status?projectKey=sonarqube-container" \
+          | jq -r '.projectStatus.status')
+        
+        echo "Quality Gate Status: $QUALITY_GATE_STATUS"
+        
+        if [ "$QUALITY_GATE_STATUS" != "OK" ]; then
+          echo "Quality Gate failed!"
+          exit 1
+        fi
+
+    - name: Security Report
+      run: |
+        # Generate security report
+        curl -u admin:admin \
+          "http://localhost:9000/api/issues/search?componentKeys=sonarqube-container&types=VULNERABILITY,SECURITY_HOTSPOT&ps=500" \
+          | jq '.issues[] | {key: .key, severity: .severity, type: .type, message: .message, rule: .rule}' \
+          > security-report.json
+        
+        echo "Security issues found:"
+        cat security-report.json
+
+    - name: Upload Security Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: security-report.json
+
+    - name: Stop SonarQube
+      if: always()
+      run: docker-compose down

@@ -1,68 +1,53 @@
-# Build stage
-FROM eclipse-temurin:21-jre-alpine as builder
+# Use official SonarQube Community Edition as base
+FROM sonarqube:10.6-community
 
-# Environment variables
-ENV SONARQUBE_VERSION=25.6.0.109173 \
-    SONARQUBE_HOME=/opt/sonarqube \
-    SQ_DATA_DIR="/opt/sonarqube/data" \
-    SQ_EXTENSIONS_DIR="/opt/sonarqube/extensions" \
-    SQ_LOGS_DIR="/opt/sonarqube/logs" \
-    SQ_TEMP_DIR="/opt/sonarqube/temp"
-
-# Download SonarQube and plugins
-ARG SONARQUBE_ZIP_URL=https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip
-ARG CNES_REPORT_URL=https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar
-ARG COMMUNITY_BRANCH_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-community-branch-plugin-25.5.0.jar
-ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/4.1.0-SNAPSHOT/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar
-ARG SONARCXX_URL=https://github.com/SonarOpenCommunity/sonar-cxx/releases/download/cxx-2.2.1/sonar-cxx-plugin-2.2.1.jar
-ARG ESLINT_SONARJS_URL=https://github.com/SonarSource/eslint-plugin-sonarjs/releases/download/1.0.3/eslint-plugin-sonarjs-1.0.3.tgz
-ARG DEPENDENCY_CHECK_URL=https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/5.0.0/sonar-dependency-check-plugin-5.0.0.jar
-
-RUN set -eux; \
-    apk add --no-cache curl unzip; \
-    mkdir -p /opt; \
-    curl --fail --location --output sonarqube.zip --silent --show-error "${SONARQUBE_ZIP_URL}"; \
-    unzip -q sonarqube.zip -d /opt; \
-    mv /opt/sonarqube-${SONARQUBE_VERSION} ${SONARQUBE_HOME}; \
-    rm -rf ${SONARQUBE_HOME}/bin/*; \
-    rm sonarqube.zip*; \
-    mkdir -p ${SQ_EXTENSIONS_DIR}/plugins; \
-    for plugin in "${CNES_REPORT_URL}" "${COMMUNITY_BRANCH_URL}" "${GITLAB_PLUGIN_URL}" "${SONARCXX_URL}" "${ESLINT_SONARJS_URL}" "${DEPENDENCY_CHECK_URL}"; do \
-        curl --fail --location --output ${SQ_EXTENSIONS_DIR}/plugins/$(basename ${plugin}) "${plugin}" || echo "Failed to download plugin: ${plugin}"; \
-    done; \
-    echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.pdf.report.path=${SQ_DATA_DIR}/report.pdf" >> ${SONARQUBE_HOME}/conf/sonar.properties
-
-# Final stage
-FROM eclipse-temurin:21-jre-alpine
+# Switch to root for installation
+USER root
 
 # Metadata
 LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
-LABEL org.opencontainers.image.description="SonarQube Docker image with CNES Report, Community Branch, GitLab, SonarCXX, ESLint SonarJS, and Dependency-Check plugins"
+LABEL org.opencontainers.image.description="SonarQube LTS Community Edition with enhanced plugins for DevSecOps"
 LABEL maintainer="Oscar Valois osvaloismtz@gmail.com"
+LABEL version="2025.1-lts"
 
-ENV LANG='en_US.UTF-8' \
-    LANGUAGE='en_US:en' \
-    LC_ALL='en_US.UTF-8' \
-    SONARQUBE_HOME=/opt/sonarqube \
-    SQ_DATA_DIR="/opt/sonarqube/data" \
-    SQ_EXTENSIONS_DIR="/opt/sonarqube/extensions" \
-    SQ_LOGS_DIR="/opt/sonarqube/logs" \
-    SQ_TEMP_DIR="/opt/sonarqube/temp"
+# Download and install plugins
+ARG CNES_REPORT_URL=https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar
+ARG COMMUNITY_BRANCH_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.21.0/sonarqube-community-branch-plugin-1.21.0.jar
+ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/4.1.0-SNAPSHOT/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar
+ARG SONARCXX_URL=https://github.com/SonarOpenCommunity/sonar-cxx/releases/download/cxx-2.2.1/sonar-cxx-plugin-2.2.1.jar
+ARG DEPENDENCY_CHECK_URL=https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/5.0.0/sonar-dependency-check-plugin-5.0.0.jar
+ARG SONAR_FLUTTER_URL=https://github.com/insideapp-oss/sonar-flutter/releases/download/0.5.0/sonar-flutter-plugin-0.5.0.jar
+ARG COMMUNITY_RUST_URL=https://github.com/C4tWithShell/community-rust/releases/download/0.2.1/sonar-rust-plugin-0.2.1.jar
 
-RUN apk add --no-cache bash su-exec ttf-dejavu; \
-    addgroup -S sonarqube && adduser -S -G sonarqube sonarqube
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y curl; \
+    mkdir -p ${SONARQUBE_HOME}/extensions/plugins; \
+    echo "Downloading plugins..."; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-5.0.2.jar "${CNES_REPORT_URL}" || echo "Failed to download CNES Report plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.21.0.jar "${COMMUNITY_BRANCH_URL}" || echo "Failed to download Community Branch plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar "${GITLAB_PLUGIN_URL}" || echo "Failed to download GitLab plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-cxx-plugin-2.2.1.jar "${SONARCXX_URL}" || echo "Failed to download SonarCXX plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-dependency-check-plugin-5.0.0.jar "${DEPENDENCY_CHECK_URL}" || echo "Failed to download Dependency Check plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-flutter-plugin-0.5.0.jar "${SONAR_FLUTTER_URL}" || echo "Failed to download Flutter plugin"; \
+    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-rust-plugin-0.2.1.jar "${COMMUNITY_RUST_URL}" || echo "Failed to download Rust plugin"; \
+    chown -R sonarqube:sonarqube ${SONARQUBE_HOME}/extensions/plugins; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
-COPY --from=builder --chown=sonarqube:sonarqube ${SONARQUBE_HOME} ${SONARQUBE_HOME}
-COPY entrypoint.sh ${SONARQUBE_HOME}/docker/entrypoint.sh
+# Add custom configuration
+RUN echo "# Enhanced Security and Compliance Settings" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.security.hotspots.inheritFromParent=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.qualitygate.wait=true" >> ${SONARQUBE_HOME}/conf/sonar.properties;
 
-RUN chmod +x ${SONARQUBE_HOME}/docker/entrypoint.sh; \
-    chmod -R 777 "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"
+# Copy custom entrypoint if needed
+COPY entrypoint.sh /opt/sonarqube/docker/entrypoint-custom.sh
+RUN chmod +x /opt/sonarqube/docker/entrypoint-custom.sh
 
-WORKDIR ${SONARQUBE_HOME}
-EXPOSE 9000
+# Switch back to sonarqube user
+USER sonarqube
 
-ENTRYPOINT ["/opt/sonarqube/docker/entrypoint.sh"]
-
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-25.5.0.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SQ_EXTENSIONS_DIR}/plugins/sonarqube-community-branch-plugin-25.5.0.jar=ce"
+# Configure Community Branch Plugin (compatible version)
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.21.0.jar=web"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.21.0.jar=ce"

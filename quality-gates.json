@@ -1,0 +1,163 @@
+{
+  "qualityGates": {
+    "default": {
+      "name": "DevSecOps Quality Gate 2025",
+      "conditions": [
+        {
+          "metric": "new_reliability_rating",
+          "operator": "GREATER_THAN",
+          "threshold": "1",
+          "description": "Reliability Rating on New Code"
+        },
+        {
+          "metric": "new_security_rating",
+          "operator": "GREATER_THAN", 
+          "threshold": "1",
+          "description": "Security Rating on New Code"
+        },
+        {
+          "metric": "new_maintainability_rating",
+          "operator": "GREATER_THAN",
+          "threshold": "1", 
+          "description": "Maintainability Rating on New Code"
+        },
+        {
+          "metric": "new_coverage",
+          "operator": "LESS_THAN",
+          "threshold": "80",
+          "description": "Coverage on New Code"
+        },
+        {
+          "metric": "new_duplicated_lines_density",
+          "operator": "GREATER_THAN",
+          "threshold": "3",
+          "description": "Duplicated Lines (%) on New Code"
+        },
+        {
+          "metric": "new_security_hotspots_reviewed",
+          "operator": "LESS_THAN",
+          "threshold": "100",
+          "description": "Security Hotspots Reviewed on New Code"
+        },
+        {
+          "metric": "new_vulnerabilities",
+          "operator": "GREATER_THAN",
+          "threshold": "0",
+          "description": "Vulnerabilities on New Code"
+        },
+        {
+          "metric": "new_bugs",
+          "operator": "GREATER_THAN", 
+          "threshold": "0",
+          "description": "Bugs on New Code"
+        }
+      ]
+    },
+    "security_focused": {
+      "name": "Security-First Quality Gate",
+      "conditions": [
+        {
+          "metric": "security_rating",
+          "operator": "GREATER_THAN",
+          "threshold": "1",
+          "description": "Security Rating"
+        },
+        {
+          "metric": "vulnerabilities",
+          "operator": "GREATER_THAN",
+          "threshold": "0", 
+          "description": "Vulnerabilities"
+        },
+        {
+          "metric": "security_hotspots_reviewed",
+          "operator": "LESS_THAN",
+          "threshold": "100",
+          "description": "Security Hotspots Reviewed"
+        },
+        {
+          "metric": "security_remediation_effort",
+          "operator": "GREATER_THAN",
+          "threshold": "0",
+          "description": "Security Remediation Effort"
+        }
+      ]
+    },
+    "compliance": {
+      "name": "Compliance Quality Gate (CWE/OWASP)",
+      "conditions": [
+        {
+          "metric": "new_security_rating",
+          "operator": "GREATER_THAN",
+          "threshold": "1",
+          "description": "Security Rating on New Code"
+        },
+        {
+          "metric": "new_reliability_rating", 
+          "operator": "GREATER_THAN",
+          "threshold": "1",
+          "description": "Reliability Rating on New Code"
+        },
+        {
+          "metric": "new_vulnerabilities",
+          "operator": "GREATER_THAN",
+          "threshold": "0",
+          "description": "Vulnerabilities on New Code"
+        },
+        {
+          "metric": "new_security_hotspots_reviewed",
+          "operator": "LESS_THAN",
+          "threshold": "100",
+          "description": "Security Hotspots Reviewed on New Code"
+        },
+        {
+          "metric": "new_coverage",
+          "operator": "LESS_THAN", 
+          "threshold": "90",
+          "description": "Coverage on New Code"
+        }
+      ]
+    }
+  },
+  "compliance_standards": {
+    "cwe_top_25_2024": {
+      "enabled": true,
+      "rules": [
+        "CWE-79", "CWE-787", "CWE-20", "CWE-125", "CWE-119",
+        "CWE-89", "CWE-200", "CWE-416", "CWE-352", "CWE-22",
+        "CWE-434", "CWE-476", "CWE-502", "CWE-190", "CWE-287",
+        "CWE-798", "CWE-862", "CWE-77", "CWE-306", "CWE-618",
+        "CWE-276", "CWE-94", "CWE-522", "CWE-269", "CWE-863"
+      ]
+    },
+    "owasp_mobile_top_10_2024": {
+      "enabled": true,
+      "categories": [
+        "M1_Improper_Credential_Usage",
+        "M2_Inadequate_Supply_Chain_Security", 
+        "M3_Insecure_Authentication_Authorization",
+        "M4_Insufficient_Input_Output_Validation",
+        "M5_Insecure_Communication",
+        "M6_Inadequate_Privacy_Controls",
+        "M7_Insufficient_Binary_Protections",
+        "M8_Security_Misconfiguration",
+        "M9_Insecure_Data_Storage",
+        "M10_Insufficient_Cryptography"
+      ]
+    },
+    "owasp_top_10_2021": {
+      "enabled": true,
+      "categories": [
+        "A01_Broken_Access_Control",
+        "A02_Cryptographic_Failures",
+        "A03_Injection",
+        "A04_Insecure_Design", 
+        "A05_Security_Misconfiguration",
+        "A06_Vulnerable_Outdated_Components",
+        "A07_Identification_Authentication_Failures",
+        "A08_Software_Data_Integrity_Failures",
+        "A09_Security_Logging_Monitoring_Failures",
+        "A10_Server_Side_Request_Forgery"
+      ]
+    }
+  }
+}

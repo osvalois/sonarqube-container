@@ -1,18 +1,24 @@
 version: '3.8'
 services:
   sonarqube:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - SONARQUBE_VERSION=${SONARQUBE_VERSION:-25.6.0.109173}
+    image: sonarqube-container-sonarqube:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - SONARQUBE_VERSION=${SONARQUBE_VERSION:-2025.1.0.77975}
     ports:
       - "9000:9000"
     environment:
       - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
       - SONAR_JDBC_USERNAME=sonar
       - SONAR_JDBC_PASSWORD=sonar
-      - SONARQUBE_VERSION=${SONARQUBE_VERSION:-25.6.0.109173}
+      - SONARQUBE_VERSION=${SONARQUBE_VERSION:-2025.1.0.77975}
+      - SONAR_WEB_CONTEXT=/
+      - SONAR_WEB_HOST=0.0.0.0
+      - SONAR_WEB_PORT=9000
+      - SONAR_SECURITY_REALM=
+      - SONAR_AUTHENTICATOR_DOWNCASE=false
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
