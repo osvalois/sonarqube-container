@@ -2,11 +2,11 @@ version: '3.8'
 services:
   sonarqube:
     image: sonarqube-container-sonarqube:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    #   args:
-    #     - SONARQUBE_VERSION=${SONARQUBE_VERSION:-2025.1.0.77975}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - SONARQUBE_VERSION=${SONARQUBE_VERSION:-2025.1.0.77975}
     ports:
       - "9000:9000"
     environment:
