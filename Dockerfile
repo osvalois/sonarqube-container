@@ -40,9 +40,15 @@ RUN echo "# Enhanced Security and Compliance Settings" >> ${SONARQUBE_HOME}/conf
 
 # Remove custom entrypoint to avoid exec format errors
 
-# Switch back to sonarqube user
-USER sonarqube
+# Stay as root user to avoid permission issues in Railway
+# USER sonarqube
 
 # Configure Community Branch Plugin (compatible version)
 ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=web"
 ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=ce"
+
+# Set environment to run as root
+ENV RUN_AS_USER=root
+
+# Override entrypoint to bypass su-exec
+ENTRYPOINT ["/opt/java/openjdk/bin/java", "-jar", "lib/sonar-application-25.6.0.109173.jar"]
