@@ -20,7 +20,7 @@ ARG SONAR_FLUTTER_URL=https://github.com/insideapp-oss/sonar-flutter/releases/do
 ARG COMMUNITY_RUST_URL=https://github.com/C4tWithShell/community-rust/releases/download/0.2.1/sonar-rust-plugin-0.2.1.jar
 
 RUN set -eux; \
-    apk add --no-cache curl; \
+    apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*; \
     mkdir -p ${SONARQUBE_HOME}/extensions/plugins; \
     echo "Downloading plugins..."; \
     curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-5.0.2.jar "${CNES_REPORT_URL}" || echo "Failed to download CNES Report plugin"; \
