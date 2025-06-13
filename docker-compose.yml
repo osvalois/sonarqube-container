@@ -5,14 +5,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - SONARQUBE_VERSION=${SONARQUBE_VERSION:-9.9.4.87374}
+        - SONARQUBE_VERSION=${SONARQUBE_VERSION:-25.6.0.109173}
     ports:
       - "9000:9000"
     environment:
       - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
       - SONAR_JDBC_USERNAME=sonar
       - SONAR_JDBC_PASSWORD=sonar
-      - SONARQUBE_VERSION=${SONARQUBE_VERSION:-9.9.4.87374}
+      - SONARQUBE_VERSION=${SONARQUBE_VERSION:-25.6.0.109173}
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
   db:
-    image: postgres:13
+    image: postgres:15
     environment:
       - POSTGRES_USER=sonar
       - POSTGRES_PASSWORD=sonar
