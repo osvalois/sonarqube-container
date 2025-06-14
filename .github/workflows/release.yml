@@ -67,18 +67,18 @@ jobs:
 
           Pull the release:
 
-              docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
               docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
 
           ## Verification
 
           Verify the signature:
 
-              cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
 
           View SBOM:
 
-              cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
         draft: false
         prerelease: false
 
@@ -141,7 +141,7 @@ jobs:
         provenance: true
         sbom: true
         build-args: |
-          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          BUILD_DATE=${{ steps.meta.outputs.labels }}
           BUILD_VERSION=${{ needs.release.outputs.version }}
           VCS_REF=${{ github.sha }}
 
