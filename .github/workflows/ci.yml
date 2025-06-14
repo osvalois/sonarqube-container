@@ -1,3 +1,4 @@
+---
 name: CI/CD Pipeline
 
 on:
@@ -6,7 +7,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 2 * * 1' # Weekly security scan on Mondays at 2 AM UTC
+    - cron: '0 2 * * 1'  # Weekly security scan on Mondays at 2 AM UTC
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,37 +29,37 @@ jobs:
   code-quality:
     name: Code Quality & Security
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Run hadolint for Dockerfile linting
-      uses: hadolint/hadolint-action@v3.1.0
-      with:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run hadolint for Dockerfile linting
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
         dockerfile: Dockerfile
         failure-threshold: warning
-        
-    - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@2.0.0
-      with:
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
         severity: warning
-        
-    - name: Run Gitleaks (Secret Scanning)
-      uses: gitleaks/gitleaks-action@v2
-      env:
+
+      - name: Run Gitleaks (Secret Scanning)
+        uses: gitleaks/gitleaks-action@v2
+        env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-        
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v4
-      if: github.event_name == 'pull_request'
-        
-    - name: YAML Lint
-      uses: ibiqlik/action-yamllint@v3
-      with:
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        if: github.event_name == 'pull_request'
+
+      - name: YAML Lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
         file_or_dir: .
         config_data: |
           extends: default
@@ -68,106 +69,106 @@ jobs:
               level: warning
             truthy:
               allowed-values: ['true', 'false', 'on']
-              
+
   security-analysis:
     name: Security Analysis
     runs-on: ubuntu-latest
     needs: code-quality
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
         languages: 'javascript, python'
-        
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
-      
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      
-    - name: Run Trivy for repository scanning
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Run Trivy for repository scanning
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-repo.sarif'
         severity: 'CRITICAL,HIGH'
-        
-    - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
         sarif_file: 'trivy-repo.sarif'
-        
+
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: code-quality
     if: github.event_name != 'schedule'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      env:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
+        with:
         args: >
           -Dsonar.organization=osvalois
           -Dsonar.projectKey=osvalois_sonarqube-container
           -Dsonar.sources=.
           -Dsonar.exclusions=**/*.md,**/vendor/**,**/node_modules/**
-          
+
   docker-build:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: [security-analysis, sonarcloud]
     if: |
-      always() && 
+      always() &&
       needs.security-analysis.result == 'success' &&
       (needs.sonarcloud.result == 'success' || needs.sonarcloud.result == 'skipped')
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Log in to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        
-    - name: Log in to GitHub Container Registry
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
         images: |
           ${{ env.DOCKER_IMAGE }}
           ${{ env.REGISTRY }}/${{ github.repository }}
@@ -178,11 +179,11 @@ jobs:
           type=ref,event=pr
           type=sha,prefix=sha-,format=short
           type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
-          
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      id: build
-      with:
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        id: build
+        with:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
@@ -195,97 +196,97 @@ jobs:
           BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           BUILD_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
           VCS_REF=${{ github.sha }}
-          
-    - name: Generate SBOM
-      uses: anchore/sbom-action@v0.17.0
-      if: github.event_name != 'pull_request'
-      with:
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0.17.0
+        if: github.event_name != 'pull_request'
+        with:
         image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
         format: spdx-json
         output-file: sbom.spdx.json
-        
-    - name: Attach SBOM to image
-      uses: sigstore/cosign-installer@v3
-      if: github.event_name != 'pull_request'
-      
-    - name: Sign container image
-      if: github.event_name != 'pull_request'
-      env:
-        COSIGN_EXPERIMENTAL: 1
-      run: |
-        cosign sign --yes \
-          ${{ env.DOCKER_IMAGE }}@${{ steps.build.outputs.digest }}
-          
+
+      - name: Attach SBOM to image
+        uses: sigstore/cosign-installer@v3
+        if: github.event_name != 'pull_request'
+
+      - name: Sign container image
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes \
+            ${{ env.DOCKER_IMAGE }}@${{ steps.build.outputs.digest }}
+
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.event_name != 'pull_request'
-    
+
     steps:
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        image-ref: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-container.sarif'
-        severity: 'CRITICAL,HIGH'
-        
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-container.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
         sarif_file: 'trivy-container.sarif'
-        
-    - name: Run Docker Scout
-      uses: docker/scout-action@v1
-      with:
-        image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
-        only-fixed: true
-        
-    - name: Create Security Report
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        echo "## Security Scan Results 🛡️" > security-report.md
-        echo "" >> security-report.md
-        echo "### Image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}" >> security-report.md
-        echo "### Scan Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> security-report.md
-        
+
+      - name: Run Docker Scout
+        uses: docker/scout-action@v1
+        with:
+          image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
+          only-fixed: true
+
+      - name: Create Security Report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "## Security Scan Results 🛡️" > security-report.md
+          echo "" >> security-report.md
+          echo "### Image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}" >> security-report.md
+          echo "### Scan Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> security-report.md
+
   notify-results:
     name: Notify Results
     runs-on: ubuntu-latest
     needs: [docker-build, container-scan]
     if: always() && github.event_name == 'pull_request'
-    
+
     steps:
-    - name: Comment PR
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const name = '${{ github.workflow }}';
-          const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-          const success = '${{ needs.docker-build.result }}' === 'success';
-          const body = `## ${name} ${success ? '✅ Passed' : '❌ Failed'}\n\n[View Run](${url})`;
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
-          });
-          
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const name = '${{ github.workflow }}';
+            const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const success = '${{ needs.docker-build.result }}' === 'success';
+            const body = `## ${name} ${success ? '✅ Passed' : '❌ Failed'}\n\n[View Run](${url})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
   cleanup:
     name: Cleanup Old Images
     runs-on: ubuntu-latest
     needs: container-scan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Delete old container images
-      uses: actions/delete-package-versions@v5
-      with:
-        package-name: 'sonarqube-container'
-        package-type: 'container'
-        min-versions-to-keep: 10
-        delete-only-untagged-versions: 'true'
+      - name: Delete old container images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'sonarqube-container'
+          package-type: 'container'
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: 'true'
