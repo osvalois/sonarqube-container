@@ -28,41 +28,45 @@ RUN set -eux; \
     chown -R sonarqube:sonarqube "${SONARQUBE_HOME}/extensions/plugins";
 
 # Add custom configuration
-RUN echo "# Enhanced Security and Compliance Settings" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.pdf.report.enabled=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.security.hotspots.inheritFromParent=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.qualitygate.wait=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "# Performance tuning" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.web.javaOpts=-Xmx512m -Xms128m" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.ce.javaOpts=-Xmx512m -Xms128m" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
-    echo "sonar.search.javaOpts=-Xmx512m -Xms512m" >> "${SONARQUBE_HOME}/conf/sonar.properties";
+RUN { \
+        echo "# Enhanced Security and Compliance Settings"; \
+        echo "sonar.pdf.report.enabled=true"; \
+        echo "sonar.security.hotspots.inheritFromParent=true"; \
+        echo "sonar.qualitygate.wait=true"; \
+        echo "# Performance tuning"; \
+        echo "sonar.web.javaOpts=-Xmx512m -Xms128m"; \
+        echo "sonar.ce.javaOpts=-Xmx512m -Xms128m"; \
+        echo "sonar.search.javaOpts=-Xmx512m -Xms512m"; \
+    } >> "${SONARQUBE_HOME}/conf/sonar.properties";
 
 # Create custom entrypoint script for dynamic JAR detection
-RUN echo '#!/bin/bash' > /usr/local/bin/docker-entrypoint.sh && \
-    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '# If running as root, switch to sonarqube user (except for Railway)' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'if [ "$(id -u)" = "0" ] && [ "$RUN_AS_ROOT" != "true" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    echo "Switching to sonarqube user..."' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    exec su-exec sonarqube "$0" "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '# Find the sonar-application JAR dynamically' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'if [ -z "$SONAR_APP_JAR" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    echo "ERROR: Could not find sonar-application JAR file"' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    exit 1' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "Starting SonarQube with: $SONAR_APP_JAR"' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '# Execute with proper Java options' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'exec java \\' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    ${SONAR_WEB_JAVAADDITIONALOPTS} \\' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    ${SONAR_CE_JAVAADDITIONALOPTS} \\' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    -jar "$SONAR_APP_JAR" \\' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
+RUN { \
+        printf "#!/bin/bash\n"; \
+        printf "set -e\n"; \
+        printf "\n"; \
+        printf "# If running as root, switch to sonarqube user (except for Railway)\n"; \
+        printf "if [ \"\$(id -u)\" = \"0\" ] && [ \"\$RUN_AS_ROOT\" != \"true\" ]; then\n"; \
+        printf "    echo \"Switching to sonarqube user...\"\n"; \
+        printf "    exec su-exec sonarqube \"\$0\" \"\$@\"\n"; \
+        printf "fi\n"; \
+        printf "\n"; \
+        printf "# Find the sonar-application JAR dynamically\n"; \
+        printf "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)\n"; \
+        printf "\n"; \
+        printf "if [ -z \"\$SONAR_APP_JAR\" ]; then\n"; \
+        printf "    echo \"ERROR: Could not find sonar-application JAR file\"\n"; \
+        printf "    exit 1\n"; \
+        printf "fi\n"; \
+        printf "\n"; \
+        printf "echo \"Starting SonarQube with: \$SONAR_APP_JAR\"\n"; \
+        printf "\n"; \
+        printf "# Execute with proper Java options\n"; \
+        printf "exec java \\\\\n"; \
+        printf "    \${SONAR_WEB_JAVAADDITIONALOPTS} \\\\\n"; \
+        printf "    \${SONAR_CE_JAVAADDITIONALOPTS} \\\\\n"; \
+        printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
+        printf "    \"\$@\"\n"; \
+    } > /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Switch back to sonarqube user for security
