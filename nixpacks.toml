@@ -1,5 +1,0 @@
-[phases.setup]
-nixPkgs = ["docker"]
-
-[start]
-cmd = "docker run --rm -p $PORT:9000 -e SONAR_JDBC_URL=$SONAR_JDBC_URL -e SONAR_JDBC_USERNAME=$SONAR_JDBC_USERNAME -e SONAR_JDBC_PASSWORD=$SONAR_JDBC_PASSWORD -e SONAR_WEB_PORT=9000 sonarqube:10.6-community"

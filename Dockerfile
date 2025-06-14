@@ -1,5 +1,5 @@
-# Use official SonarQube Community Edition as base
-FROM sonarqube:10.6-community
+# Use official SonarQube LTS Community Edition as base
+FROM sonarqube:lts-community
 
 # Switch to root for installation
 USER root
@@ -8,47 +8,61 @@ USER root
 LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
 LABEL org.opencontainers.image.description="SonarQube LTS Community Edition with enhanced plugins for DevSecOps"
 LABEL maintainer="Oscar Valois osvaloismtz@gmail.com"
-LABEL version="2025.1-lts"
+LABEL version="10.6-lts"
 
-# Download and install plugins
-ARG CNES_REPORT_URL=https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar
-ARG COMMUNITY_BRANCH_URL=https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-community-branch-plugin-25.5.0.jar
-ARG GITLAB_PLUGIN_URL=https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/4.1.0-SNAPSHOT/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar
-ARG SONARCXX_URL=https://github.com/SonarOpenCommunity/sonar-cxx/releases/download/cxx-2.2.1/sonar-cxx-plugin-2.2.1.jar
-ARG DEPENDENCY_CHECK_URL=https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/5.0.0/sonar-dependency-check-plugin-5.0.0.jar
-ARG SONAR_FLUTTER_URL=https://github.com/insideapp-oss/sonar-flutter/releases/download/0.5.0/sonar-flutter-plugin-0.5.0.jar
-ARG COMMUNITY_RUST_URL=https://github.com/C4tWithShell/community-rust/releases/download/0.2.1/sonar-rust-plugin-0.2.1.jar
-
+# Install dependencies and create plugin directory
 RUN set -eux; \
     apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*; \
     mkdir -p ${SONARQUBE_HOME}/extensions/plugins; \
-    echo "Downloading plugins..."; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-5.0.2.jar "${CNES_REPORT_URL}" || echo "Failed to download CNES Report plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar "${COMMUNITY_BRANCH_URL}" || echo "Failed to download Community Branch plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar "${GITLAB_PLUGIN_URL}" || echo "Failed to download GitLab plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-cxx-plugin-2.2.1.jar "${SONARCXX_URL}" || echo "Failed to download SonarCXX plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-dependency-check-plugin-5.0.0.jar "${DEPENDENCY_CHECK_URL}" || echo "Failed to download Dependency Check plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-flutter-plugin-0.5.0.jar "${SONAR_FLUTTER_URL}" || echo "Failed to download Flutter plugin"; \
-    curl --fail --location --output ${SONARQUBE_HOME}/extensions/plugins/sonar-rust-plugin-0.2.1.jar "${COMMUNITY_RUST_URL}" || echo "Failed to download Rust plugin"; \
     chown -R sonarqube:sonarqube ${SONARQUBE_HOME}/extensions/plugins;
 
 # Add custom configuration
 RUN echo "# Enhanced Security and Compliance Settings" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
     echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
     echo "sonar.security.hotspots.inheritFromParent=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.qualitygate.wait=true" >> ${SONARQUBE_HOME}/conf/sonar.properties;
+    echo "sonar.qualitygate.wait=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "# Performance tuning" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.web.javaOpts=-Xmx512m -Xms128m" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.ce.javaOpts=-Xmx512m -Xms128m" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
+    echo "sonar.search.javaOpts=-Xmx512m -Xms512m" >> ${SONARQUBE_HOME}/conf/sonar.properties;
 
-# Remove custom entrypoint to avoid exec format errors
+# Create custom entrypoint script for dynamic JAR detection
+RUN echo '#!/bin/bash' > /usr/local/bin/docker-entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# If running as root, switch to sonarqube user (except for Railway)' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'if [ "$(id -u)" = "0" ] && [ "$RUN_AS_ROOT" != "true" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    echo "Switching to sonarqube user..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    exec su-exec sonarqube "$0" "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Find the sonar-application JAR dynamically' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'if [ -z "$SONAR_APP_JAR" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    echo "ERROR: Could not find sonar-application JAR file"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    exit 1' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'echo "Starting SonarQube with: $SONAR_APP_JAR"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Execute with proper Java options' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'exec java \' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    ${SONAR_WEB_JAVAADDITIONALOPTS} \' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    ${SONAR_CE_JAVAADDITIONALOPTS} \' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    -jar "$SONAR_APP_JAR" \' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Stay as root user to avoid permission issues in Railway
-# USER sonarqube
+# Switch back to sonarqube user for security
+USER sonarqube
 
-# Configure Community Branch Plugin (compatible version)
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=ce"
+# Environment variables for plugins (can be configured at runtime)
+ENV SONAR_WEB_JAVAADDITIONALOPTS=""
+ENV SONAR_CE_JAVAADDITIONALOPTS=""
 
-# Set environment to run as root
-ENV RUN_AS_USER=root
+# Allow running as root only when explicitly set (for Railway compatibility)
+ENV RUN_AS_ROOT=false
 
-# Override entrypoint to bypass su-exec
-ENTRYPOINT ["/opt/java/openjdk/bin/java", "-jar", "lib/sonar-application-25.6.0.109173.jar"]
+# Use the dynamic entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
