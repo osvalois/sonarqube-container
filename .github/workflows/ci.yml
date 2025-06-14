@@ -38,20 +38,17 @@ jobs:
 
       - name: Run hadolint for Dockerfile linting
         uses: hadolint/hadolint-action@v3.1.0
-        with:
-        dockerfile: Dockerfile
-        failure-threshold: warning
 
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@2.0.0
         with:
-        severity: warning
+          severity: warning
 
       - name: Run Gitleaks (Secret Scanning)
         uses: gitleaks/gitleaks-action@v2
         env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -60,8 +57,8 @@ jobs:
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3
         with:
-        file_or_dir: .
-        config_data: |
+          file_or_dir: .
+          config_data: |
           extends: default
           rules:
             line-length:
@@ -82,7 +79,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-        languages: 'javascript, python'
+          languages: 'javascript, python'
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -93,17 +90,17 @@ jobs:
       - name: Run Trivy for repository scanning
         uses: aquasecurity/trivy-action@0.31.0
         with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-repo.sarif'
-        severity: 'CRITICAL,HIGH'
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-repo.sarif'
+          severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-        sarif_file: 'trivy-repo.sarif'
+          sarif_file: 'trivy-repo.sarif'
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -120,14 +117,14 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-        args: >
-          -Dsonar.organization=osvalois
-          -Dsonar.projectKey=osvalois_sonarqube-container
-          -Dsonar.sources=.
-          -Dsonar.exclusions=**/*.md,**/vendor/**,**/node_modules/**
+          args: >
+            -Dsonar.organization=osvalois
+            -Dsonar.projectKey=osvalois_sonarqube-container
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/*.md,**/vendor/**,**/node_modules/**
 
   docker-build:
     name: Build & Push Docker Image
@@ -154,56 +151,56 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-        images: |
-          ${{ env.DOCKER_IMAGE }}
-          ${{ env.REGISTRY }}/${{ github.repository }}
-        tags: |
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=ref,event=branch
-          type=ref,event=tag
-          type=ref,event=pr
-          type=sha,prefix=sha-,format=short
-          type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
+          images: |
+            ${{ env.DOCKER_IMAGE }}
+            ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha,prefix=sha-,format=short
+            type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         id: build
         with:
-        context: .
-        file: ./Dockerfile
-        platforms: linux/amd64,linux/arm64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-          BUILD_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-          VCS_REF=${{ github.sha }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            BUILD_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+            VCS_REF=${{ github.sha }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0.17.0
         if: github.event_name != 'pull_request'
         with:
-        image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
-        format: spdx-json
-        output-file: sbom.spdx.json
+          image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
+          format: spdx-json
+          output-file: sbom.spdx.json
 
       - name: Attach SBOM to image
         uses: sigstore/cosign-installer@v3
@@ -236,7 +233,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-        sarif_file: 'trivy-container.sarif'
+          sarif_file: 'trivy-container.sarif'
 
       - name: Run Docker Scout
         uses: docker/scout-action@v1
