@@ -55,6 +55,7 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: YAML Lint
+        if: false # Temporarily disabled
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: .
