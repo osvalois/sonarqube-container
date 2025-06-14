@@ -50,38 +50,35 @@ jobs:
         id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-        config: .github/cliff.toml
-        args: --latest --strip header
+          config: .github/cliff.toml
+          args: --latest --strip header
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-        tag_name: ${{ steps.version.outputs.version }}
-        name: Release ${{ steps.version.outputs.version }}
-        body: |
-          ## What's Changed
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## What's Changed
 
-          ${{ steps.changelog.outputs.content }}
+            ${{ steps.changelog.outputs.content }}
 
           ## Docker Images
 
           Pull the release:
-          ```bash
-          docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
-          ```
+
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+              docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
 
           ## Verification
 
           Verify the signature:
-          ```bash
-          cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          ```
+
+            cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
 
           View SBOM:
-          ```bash
-          cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          ```
+
+            cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
         draft: false
         prerelease: false
 
@@ -144,7 +141,7 @@ jobs:
         provenance: true
         sbom: true
         build-args: |
-          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          BUILD_DATE=${{ steps.meta.outputs.labels }}
           BUILD_VERSION=${{ needs.release.outputs.version }}
           VCS_REF=${{ github.sha }}
 
