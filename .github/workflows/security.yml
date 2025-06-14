@@ -2,8 +2,9 @@
 name: Security Scanning
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  # Temporarily disabled
+  # schedule:
+  #   - cron: '0 2 * * *'  # Daily at 2 AM UTC
   workflow_dispatch:
     inputs:
       image_tag:

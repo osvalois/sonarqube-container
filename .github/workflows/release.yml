@@ -2,9 +2,10 @@
 name: Release Pipeline
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  # Temporarily disabled
+  # push:
+  #   tags:
+  #     - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
