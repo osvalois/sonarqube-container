@@ -66,6 +66,7 @@ jobs:
           ## Docker Images
 
           Pull the release:
+          
           ```bash
           docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
           docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}

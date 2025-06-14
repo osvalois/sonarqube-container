@@ -116,8 +116,8 @@ jobs:
           Critical vulnerabilities were detected in the scheduled security scan.
 
           **Scan Date**: ${date}
-          **Workflow Run**: [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/\
-          ${context.runId})
+          **Workflow Run**: [${context.runId}](${context.serverUrl}/${context.repo.owner}/\
+          ${context.repo.repo}/actions/runs/${context.runId})
 
           ### Actions Required:
           1. Review the security scan results
