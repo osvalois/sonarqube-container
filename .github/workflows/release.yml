@@ -66,23 +66,19 @@ jobs:
           ## Docker Images
 
           Pull the release:
-          
-          ```bash
-          docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
-          ```
+
+              docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+              docker pull ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
 
           ## Verification
 
           Verify the signature:
-          ```bash
-          cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          ```
+
+              cosign verify ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
 
           View SBOM:
-          ```bash
-          cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          ```
+
+              cosign download sbom ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
         draft: false
         prerelease: false
 
