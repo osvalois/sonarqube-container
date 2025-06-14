@@ -48,7 +48,7 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        uses: orhun/git-cliff-action@v3
+        uses: orhun/git-cliff-action@v4
         with:
         config: .github/cliff.toml
         args: --latest --strip header
@@ -130,7 +130,7 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push by platform
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         id: build
         with:
         context: .
@@ -186,7 +186,7 @@ jobs:
             ${{ env.DOCKER_IMAGE }}:${{ needs.release.outputs.version }}
 
       - name: Create attestation
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v2
         with:
         subject-name: ${{ env.DOCKER_IMAGE }}
         subject-digest: ${{ needs.build-release.outputs.digest }}

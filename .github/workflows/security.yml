@@ -65,7 +65,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v6
         id: grype
         with:
         image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
@@ -166,7 +166,7 @@ jobs:
           fi
 
       - name: Create PR for updates
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: 'chore: update dependencies and base images'
