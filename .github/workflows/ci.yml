@@ -76,17 +76,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: 'javascript, python'
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
       - name: Run Trivy for repository scanning
         uses: aquasecurity/trivy-action@0.31.0
         with:
@@ -97,10 +86,38 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('trivy-repo.sarif') != ''
         with:
           sarif_file: 'trivy-repo.sarif'
+          
+      - name: Run checkov for Infrastructure as Code scanning
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: dockerfile,yaml
+          output_format: sarif
+          output_file: checkov-results.sarif
+          
+      - name: Upload checkov results
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('checkov-results.sarif') != ''
+        with:
+          sarif_file: 'checkov-results.sarif'
+          
+      - name: Run KICS scan
+        uses: checkmarx/kics-github-action@v1.7.0
+        with:
+          path: '.'
+          output_path: kics-results
+          output_formats: 'sarif'
+          ignore_on_exit: results
+          
+      - name: Upload KICS results
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('kics-results/results.sarif') != ''
+        with:
+          sarif_file: 'kics-results/results.sarif'
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -230,8 +247,8 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('trivy-container.sarif') != ''
         with:
           sarif_file: 'trivy-container.sarif'
 
@@ -241,6 +258,13 @@ jobs:
           command: cves
           image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
           only-fixed: true
+          sarif-file: docker-scout.sarif
+          
+      - name: Upload Docker Scout results
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('docker-scout.sarif') != ''
+        with:
+          sarif_file: 'docker-scout.sarif'
 
       - name: Create Security Report
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

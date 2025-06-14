@@ -32,19 +32,26 @@ jobs:
       - name: Run OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@1.1.0
         with:
-        project: 'sonarqube-container'
-        path: '.'
-        format: 'ALL'
-        args: >
-          --enableRetired
-          --enableExperimental
+          project: 'sonarqube-container'
+          path: '.'
+          format: 'ALL'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --format SARIF
 
-      - name: Upload results
+      - name: Upload results as artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: dependency-check-report
           path: reports/
+          
+      - name: Upload SARIF to GitHub Security
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('reports/dependency-check-report.sarif') != ''
+        with:
+          sarif_file: 'reports/dependency-check-report.sarif'
 
   container-scan:
     name: Container Vulnerability Scan
@@ -68,34 +75,46 @@ jobs:
         uses: anchore/scan-action@v6
         id: grype
         with:
-        image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
-        fail-build: false
-        severity-cutoff: critical
+          image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
+          fail-build: false
+          severity-cutoff: critical
 
       - name: Upload Grype results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/code-scanning-action/upload@v2
+        if: always() && steps.grype.outputs.sarif != ''
         with:
-        sarif_file: ${{ steps.grype.outputs.sarif }}
+          sarif_file: ${{ steps.grype.outputs.sarif }}
 
       - name: Run Trivy scanner
         uses: aquasecurity/trivy-action@master
         with:
-        image-ref: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
-        format: 'table'
-        exit-code: '0'
-        ignore-unfixed: true
-        vuln-type: 'os,library'
-        severity: 'CRITICAL,HIGH'
-
-      - name: Run Snyk scanner
-        uses: snyk/actions/docker@master
-        continue-on-error: true
-        env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-container-${{ steps.image.outputs.tag }}.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Upload Trivy results
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('trivy-container-${{ steps.image.outputs.tag }}.sarif') != ''
         with:
-        image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
-        args: --severity-threshold=high
+          sarif_file: 'trivy-container-${{ steps.image.outputs.tag }}.sarif'
+          
+      - name: Run Docker Scout
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
+          only-fixed: true
+          sarif-file: 'docker-scout-${{ steps.image.outputs.tag }}.sarif'
+          
+      - name: Upload Docker Scout results
+        uses: github/code-scanning-action/upload@v2
+        if: always() && hashFiles('docker-scout-${{ steps.image.outputs.tag }}.sarif') != ''
+        with:
+          sarif_file: 'docker-scout-${{ steps.image.outputs.tag }}.sarif'
 
   create-issues:
     name: Create Security Issues
@@ -107,37 +126,36 @@ jobs:
       - name: Create issue for vulnerabilities
         uses: actions/github-script@v7
         with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const date = new Date().toISOString().split('T')[0];
-          const title = `Security Vulnerabilities Detected - ${date}`;
-          const body = `## Security Scan Results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const title = `Security Vulnerabilities Detected - ${date}`;
+            const body = `## Security Scan Results
 
-          Critical vulnerabilities were detected in the scheduled security scan.
+            Critical vulnerabilities were detected in the scheduled security scan.
 
-          **Scan Date**: ${date}
-          **Workflow Run**: [${context.runId}](${context.serverUrl}/${context.repo.owner}/\
-          ${context.repo.repo}/actions/runs/${context.runId})
+            **Scan Date**: ${date}
+            **Workflow Run**: [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
 
-          ### Actions Required:
-          1. Review the security scan results
-          2. Update vulnerable dependencies
-          3. Rebuild and push updated images
+            ### Actions Required:
+            1. Review the security scan results
+            2. Update vulnerable dependencies
+            3. Rebuild and push updated images
 
-          ### Affected Images:
-          - ${{ env.DOCKER_IMAGE }}:latest
-          - ${{ env.DOCKER_IMAGE }}:main
-          - ${{ env.DOCKER_IMAGE }}:develop
+            ### Affected Images:
+            - ${{ env.DOCKER_IMAGE }}:latest
+            - ${{ env.DOCKER_IMAGE }}:main
+            - ${{ env.DOCKER_IMAGE }}:develop
 
-          cc: @${{ github.repository_owner }}`;
+            cc: @${{ github.repository_owner }}`;
 
-          await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: title,
-            body: body,
-            labels: ['security', 'vulnerability', 'automated']
-          });
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'vulnerability', 'automated']
+            });
 
   update-dependencies:
     name: Auto-update Dependencies
@@ -169,23 +187,23 @@ jobs:
       - name: Create PR for updates
         uses: peter-evans/create-pull-request@v7
         with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: 'chore: update dependencies and base images'
-        title: 'Security: Update dependencies and base images'
-        body: |
-          ## Automated Security Update
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies and base images'
+          title: 'Security: Update dependencies and base images'
+          body: |
+            ## Automated Security Update
 
-          This PR updates:
-          - Base Docker image to latest version
-          - Security patches
+            This PR updates:
+            - Base Docker image to latest version
+            - Security patches
 
-          ### Security Scan Results
-          View the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            ### Security Scan Results
+            View the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-          ---
-          *This PR was created automatically by the security scanning workflow.*
-        branch: security-updates-${{ github.run_number }}
-        labels: |
-          security
-          dependencies
-          automated
+            ---
+            *This PR was created automatically by the security scanning workflow.*
+          branch: security-updates-${{ github.run_number }}
+          labels: |
+            security
+            dependencies
+            automated
