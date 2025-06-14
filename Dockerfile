@@ -23,19 +23,19 @@ LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
 
 # Install dependencies and create plugin directory
 RUN set -eux; \
-    apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*; \
-    mkdir -p ${SONARQUBE_HOME}/extensions/plugins; \
-    chown -R sonarqube:sonarqube ${SONARQUBE_HOME}/extensions/plugins;
+    apt-get update && apt-get install -y --no-install-recommends curl=7.* && rm -rf /var/lib/apt/lists/*; \
+    mkdir -p "${SONARQUBE_HOME}/extensions/plugins"; \
+    chown -R sonarqube:sonarqube "${SONARQUBE_HOME}/extensions/plugins";
 
 # Add custom configuration
-RUN echo "# Enhanced Security and Compliance Settings" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.pdf.report.enabled=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.security.hotspots.inheritFromParent=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.qualitygate.wait=true" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "# Performance tuning" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.web.javaOpts=-Xmx512m -Xms128m" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.ce.javaOpts=-Xmx512m -Xms128m" >> ${SONARQUBE_HOME}/conf/sonar.properties; \
-    echo "sonar.search.javaOpts=-Xmx512m -Xms512m" >> ${SONARQUBE_HOME}/conf/sonar.properties;
+RUN echo "# Enhanced Security and Compliance Settings" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.pdf.report.enabled=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.security.hotspots.inheritFromParent=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.qualitygate.wait=true" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "# Performance tuning" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.web.javaOpts=-Xmx512m -Xms128m" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.ce.javaOpts=-Xmx512m -Xms128m" >> "${SONARQUBE_HOME}/conf/sonar.properties"; \
+    echo "sonar.search.javaOpts=-Xmx512m -Xms512m" >> "${SONARQUBE_HOME}/conf/sonar.properties";
 
 # Create custom entrypoint script for dynamic JAR detection
 RUN echo '#!/bin/bash' > /usr/local/bin/docker-entrypoint.sh && \
@@ -58,10 +58,10 @@ RUN echo '#!/bin/bash' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'echo "Starting SonarQube with: $SONAR_APP_JAR"' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '# Execute with proper Java options' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'exec java \' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    ${SONAR_WEB_JAVAADDITIONALOPTS} \' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    ${SONAR_CE_JAVAADDITIONALOPTS} \' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '    -jar "$SONAR_APP_JAR" \' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'exec java \\' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    ${SONAR_WEB_JAVAADDITIONALOPTS} \\' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    ${SONAR_CE_JAVAADDITIONALOPTS} \\' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '    -jar "$SONAR_APP_JAR" \\' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '    "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 

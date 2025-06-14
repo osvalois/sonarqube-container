@@ -16,6 +16,14 @@ updates:
       prefix: "chore"
       prefix-development: "chore"
       include: "scope"
+    open-pull-requests-limit: 10
+    groups:
+      docker-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -32,15 +40,4 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
-    
-  # Enable security updates for all ecosystems
-  open-pull-requests-limit: 10
-  
-  # Group updates
-  groups:
-    docker-dependencies:
-      patterns:
-        - "*"
-      update-types:
-        - "minor"
-        - "patch"
+    open-pull-requests-limit: 10
