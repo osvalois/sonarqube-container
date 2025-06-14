@@ -65,7 +65,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v6
         id: grype
         with:
         image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
