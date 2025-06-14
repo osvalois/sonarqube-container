@@ -1,14 +1,25 @@
 # Use official SonarQube LTS Community Edition as base
 FROM sonarqube:lts-community
 
+# Build arguments for metadata
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG VCS_REF
+
 # Switch to root for installation
 USER root
 
-# Metadata
+# Metadata following OCI Image Specification
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
+LABEL org.opencontainers.image.source="https://github.com/osvalois/sonarqube-container"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.vendor="Oscar Valois"
+LABEL org.opencontainers.image.title="SonarQube DevSecOps"
 LABEL org.opencontainers.image.description="SonarQube LTS Community Edition with enhanced plugins for DevSecOps"
-LABEL maintainer="Oscar Valois osvaloismtz@gmail.com"
-LABEL version="10.6-lts"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
 
 # Install dependencies and create plugin directory
 RUN set -eux; \
