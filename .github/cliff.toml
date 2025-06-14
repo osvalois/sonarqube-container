@@ -14,9 +14,9 @@ body = """
 {% endif %}\
 
 {% for group, commits in commits | group_by(attribute="group") %}
-    ### {{ group | upper_first }}
+    ### {{ group | capitalize }}
     {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}
+        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | capitalize }}
     {%- endfor %}
 {% endfor %}\n
 """
