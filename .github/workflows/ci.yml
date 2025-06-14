@@ -59,13 +59,13 @@ jobs:
         with:
           file_or_dir: .
           config_data: |
-          extends: default
-          rules:
-            line-length:
-              max: 120
-              level: warning
-            truthy:
-              allowed-values: ['true', 'false', 'on']
+            extends: default
+            rules:
+              line-length:
+                max: 120
+                level: warning
+              truthy:
+                allowed-values: ['true', 'false', 'on']
 
   security-analysis:
     name: Security Analysis
@@ -190,8 +190,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-            BUILD_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+            BUILD_DATE=${{ steps.meta.outputs.labels }}
+            BUILD_VERSION=${{ github.ref_name }}
             VCS_REF=${{ github.sha }}
 
       - name: Generate SBOM
@@ -238,6 +238,7 @@ jobs:
       - name: Run Docker Scout
         uses: docker/scout-action@v1
         with:
+          command: cves
           image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
           only-fixed: true
 
