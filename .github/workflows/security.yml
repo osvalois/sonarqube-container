@@ -48,7 +48,7 @@ jobs:
           path: reports/
           
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('reports/dependency-check-report.sarif') != ''
         with:
           sarif_file: 'reports/dependency-check-report.sarif'
@@ -80,8 +80,8 @@ jobs:
           severity-cutoff: critical
 
       - name: Upload Grype results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/code-scanning-action/upload@v2
+        if: always() && steps.grype.outputs.sarif != ''
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
 
@@ -97,7 +97,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('trivy-container-${{ steps.image.outputs.tag }}.sarif') != ''
         with:
           sarif_file: 'trivy-container-${{ steps.image.outputs.tag }}.sarif'
@@ -111,7 +111,7 @@ jobs:
           sarif-file: 'docker-scout-${{ steps.image.outputs.tag }}.sarif'
           
       - name: Upload Docker Scout results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('docker-scout-${{ steps.image.outputs.tag }}.sarif') != ''
         with:
           sarif_file: 'docker-scout-${{ steps.image.outputs.tag }}.sarif'

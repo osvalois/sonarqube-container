@@ -101,12 +101,13 @@ El archivo `security-config/advanced-security.properties` configura:
 
 ## Herramientas Eliminadas
 
-- **CodeQL**: Eliminado porque el proyecto no contiene código fuente en los lenguajes soportados por CodeQL (JavaScript, Python, etc.)
+- **CodeQL**: Eliminado completamente (incluyendo todos sus componentes) porque el proyecto no contiene código fuente en los lenguajes soportados por CodeQL (JavaScript, Python, etc.)
 - **Snyk**: Eliminado por redundancia con otras herramientas de análisis
 
 ## Mejoras Realizadas
 
 1. **Optimización de herramientas**: Enfoque en las herramientas más relevantes para un proyecto de contenedor Docker
-2. **Mejora de la integración con GitHub Security**: Generación y carga de reportes SARIF
+2. **Mejora de la integración con GitHub Security**: Uso de github/code-scanning-action para cargar reportes SARIF sin depender de CodeQL
 3. **Adición de análisis IaC**: Checkov y KICS para analizar archivos de infraestructura
 4. **Verificación de condiciones de archivo**: Prevención de errores cuando los archivos SARIF no existen
+5. **Eliminación completa de CodeQL**: Reemplazo de todas las referencias a CodeQL por alternativas más adecuadas
