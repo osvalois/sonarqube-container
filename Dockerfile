@@ -41,31 +41,31 @@ RUN { \
 
 # Create custom entrypoint script for dynamic JAR detection
 RUN { \
-        echo "#!/bin/bash"; \
-        echo "set -e"; \
-        echo ""; \
-        echo "# If running as root, switch to sonarqube user (except for Railway)"; \
-        echo "if [ \"\$(id -u)\" = \"0\" ] && [ \"\$RUN_AS_ROOT\" != \"true\" ]; then"; \
-        echo "    echo \"Switching to sonarqube user...\""; \
-        echo "    exec su-exec sonarqube \"\$0\" \"\$@\""; \
-        echo "fi"; \
-        echo ""; \
-        echo "# Find the sonar-application JAR dynamically"; \
-        echo "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)"; \
-        echo ""; \
-        echo "if [ -z \"\$SONAR_APP_JAR\" ]; then"; \
-        echo "    echo \"ERROR: Could not find sonar-application JAR file\""; \
-        echo "    exit 1"; \
-        echo "fi"; \
-        echo ""; \
-        echo "echo \"Starting SonarQube with: \$SONAR_APP_JAR\""; \
-        echo ""; \
-        echo "# Execute with proper Java options"; \
-        echo "exec java \\\\"; \
-        echo "    \${SONAR_WEB_JAVAADDITIONALOPTS} \\\\"; \
-        echo "    \${SONAR_CE_JAVAADDITIONALOPTS} \\\\"; \
-        echo "    -jar \"\$SONAR_APP_JAR\" \\\\"; \
-        echo "    \"\$@\""; \
+        printf "#!/bin/bash\n"; \
+        printf "set -e\n"; \
+        printf "\n"; \
+        printf "# If running as root, switch to sonarqube user (except for Railway)\n"; \
+        printf "if [ \"\$(id -u)\" = \"0\" ] && [ \"\$RUN_AS_ROOT\" != \"true\" ]; then\n"; \
+        printf "    echo \"Switching to sonarqube user...\"\n"; \
+        printf "    exec su-exec sonarqube \"\$0\" \"\$@\"\n"; \
+        printf "fi\n"; \
+        printf "\n"; \
+        printf "# Find the sonar-application JAR dynamically\n"; \
+        printf "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)\n"; \
+        printf "\n"; \
+        printf "if [ -z \"\$SONAR_APP_JAR\" ]; then\n"; \
+        printf "    echo \"ERROR: Could not find sonar-application JAR file\"\n"; \
+        printf "    exit 1\n"; \
+        printf "fi\n"; \
+        printf "\n"; \
+        printf "echo \"Starting SonarQube with: \$SONAR_APP_JAR\"\n"; \
+        printf "\n"; \
+        printf "# Execute with proper Java options\n"; \
+        printf "exec java \\\\\n"; \
+        printf "    \${SONAR_WEB_JAVAADDITIONALOPTS} \\\\\n"; \
+        printf "    \${SONAR_CE_JAVAADDITIONALOPTS} \\\\\n"; \
+        printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
+        printf "    \"\$@\"\n"; \
     } > /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
