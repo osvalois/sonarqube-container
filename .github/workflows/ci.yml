@@ -90,7 +90,6 @@ jobs:
         if: always() && hashFiles('trivy-repo.sarif') != ''
         with:
           sarif_file: 'trivy-repo.sarif'
-          
       - name: Run checkov for Infrastructure as Code scanning
         uses: bridgecrewio/checkov-action@master
         with:
@@ -98,13 +97,11 @@ jobs:
           framework: dockerfile,yaml
           output_format: sarif
           output_file: checkov-results.sarif
-          
       - name: Upload checkov results
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('checkov-results.sarif') != ''
         with:
           sarif_file: 'checkov-results.sarif'
-          
       - name: Run KICS scan
         uses: checkmarx/kics-github-action@v1.7.0
         with:
@@ -112,7 +109,6 @@ jobs:
           output_path: kics-results
           output_formats: 'sarif'
           ignore_on_exit: results
-          
       - name: Upload KICS results
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('kics-results/results.sarif') != ''
@@ -259,7 +255,6 @@ jobs:
           image: ${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}
           only-fixed: true
           sarif-file: docker-scout.sarif
-          
       - name: Upload Docker Scout results
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('docker-scout.sarif') != ''

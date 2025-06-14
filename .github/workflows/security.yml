@@ -46,7 +46,6 @@ jobs:
         with:
           name: dependency-check-report
           path: reports/
-          
       - name: Upload SARIF to GitHub Security
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('reports/dependency-check-report.sarif') != ''
@@ -95,13 +94,11 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          
       - name: Upload Trivy results
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('trivy-container-${{ steps.image.outputs.tag }}.sarif') != ''
         with:
           sarif_file: 'trivy-container-${{ steps.image.outputs.tag }}.sarif'
-          
       - name: Run Docker Scout
         uses: docker/scout-action@v1
         with:
@@ -109,7 +106,6 @@ jobs:
           image: ${{ env.DOCKER_IMAGE }}:${{ steps.image.outputs.tag }}
           only-fixed: true
           sarif-file: 'docker-scout-${{ steps.image.outputs.tag }}.sarif'
-          
       - name: Upload Docker Scout results
         uses: github/code-scanning-action/upload@v2
         if: always() && hashFiles('docker-scout-${{ steps.image.outputs.tag }}.sarif') != ''
@@ -135,7 +131,8 @@ jobs:
             Critical vulnerabilities were detected in the scheduled security scan.
 
             **Scan Date**: ${date}
-            **Workflow Run**: [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            **Workflow Run**: [${context.runId}](${context.serverUrl}/
+              ${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
 
             ### Actions Required:
             1. Review the security scan results
