@@ -35,6 +35,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # Create all required directories and ensure they have proper permissions
+# No need to change ownership at this point - Railway runs as root
 RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions \
     /opt/sonarqube/logs /opt/sonarqube/temp && \
     chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions \
@@ -51,7 +52,7 @@ RUN { \
         echo "# Performance tuning"; \
         echo "sonar.search.httpPort=9001"; \
         echo "sonar.ce.workerCount=4"; \
-    } > "${SONARQUBE_HOME}/conf/sonar.properties"
+    } > "/opt/sonarqube/conf/sonar.properties"
 
 # Create Railway-optimized entrypoint script
 RUN { \
@@ -119,9 +120,6 @@ RUN { \
         printf "    \"\$@\"\n"; \
     } > /usr/local/bin/railway-entrypoint.sh && \
     chmod +x /usr/local/bin/railway-entrypoint.sh
-
-# Ensure that all required directories have the right permissions
-RUN chown -R sonarqube:sonarqube "${SONARQUBE_HOME}"
 
 # Default environment variables matching Railway configuration
 ENV PORT="8080"
