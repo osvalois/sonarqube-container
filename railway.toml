@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile.ultra.simple"
+dockerfilePath = "Dockerfile.railway"
 
 [deploy]
 healthcheckPath = "/api/system/status"
