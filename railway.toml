@@ -9,7 +9,7 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 numReplicas = 1
 rootDirectory = "."
-startCommand = "/opt/sonarqube/bin/start-railway.sh"
+startCommand = "/usr/local/bin/start-railway.sh"
 
 [env]
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"

@@ -154,9 +154,9 @@ ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 # Expose default port
 EXPOSE 8080
 
-# Copy Railway-specific startup script
-COPY --chown=root:root start-railway.sh /opt/sonarqube/bin/start-railway.sh
-RUN chmod +x /opt/sonarqube/bin/start-railway.sh
+# Copy Railway-specific startup script and make it executable
+COPY start-railway.sh /usr/local/bin/start-railway.sh
+RUN chmod +x /usr/local/bin/start-railway.sh
 
 # Use the optimized entrypoint - Railway will override with start-railway.sh if needed
-ENTRYPOINT ["/opt/sonarqube/bin/start-railway.sh"]
+ENTRYPOINT ["/usr/local/bin/start-railway.sh"]
