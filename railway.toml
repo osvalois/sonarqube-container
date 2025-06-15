@@ -4,27 +4,32 @@ dockerfilePath = "Dockerfile.simple"
 
 [deploy]
 healthcheckPath = "/api/system/status"
-healthcheckTimeout = 600
+healthcheckTimeout = 1200
+healthcheckInterval = 60
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+restartPolicyMaxRetries = 5
 numReplicas = 1
 rootDirectory = "."
 startCommand = "/usr/local/bin/railway-entrypoint.sh"
+startupTimeout = 900
 
 [env]
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
 RUN_AS_ROOT = "true"
-JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-SONAR_WEB_JAVAOPTS = "-Xmx2g -Xms1g -XX:+UseG1GC"
-SONAR_CE_JAVAOPTS = "-Xmx2g -Xms512m -XX:+UseG1GC"
-SONAR_SEARCH_JAVAOPTS = "-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
+JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0"
+JAVA_TOOL_OPTIONS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0"
+SONAR_WEB_JAVAOPTS = "-Xmx1g -Xms512m -XX:+UseG1GC"
+SONAR_CE_JAVAOPTS = "-Xmx1g -Xms256m -XX:+UseG1GC"
+SONAR_SEARCH_JAVAOPTS = "-Xmx512m -Xms256m -XX:MaxDirectMemorySize=256m"
 SONAR_TELEMETRY_ENABLE = "false"
 SONAR_UPDATECENTER_ACTIVATE = "false"
 SONAR_WEB_PORT = "8080"
 PORT = "8080"
-SONARQUBE_WEB_JVM_OPTS = "-Xmx2g -Xms1g"
-SONARQUBE_CE_JVM_OPTS = "-Xmx2g -Xms512m"
-SONARQUBE_SEARCH_JVM_OPTS = "-Xmx1g -Xms512m"
+SONAR_WEB_HOST = "0.0.0.0"
+SONAR_WEB_CONTEXT = "/"
+SONAR_CLUSTER_ENABLED = "false"
+SONAR_LOG_LEVEL = "INFO"
+SONAR_FORCEAUTHENTICATION = "false"
 SONAR_JDBC_URL = "jdbc:postgresql://ep-floral-bush-a5ns5s26-pooler.us-east-2.aws.neon.tech/shsonar?user=shsonar_owner&password=npg_3oPHcnhxz7er&sslmode=require"
 SONAR_JDBC_USERNAME = "shsonar_owner"
 SONAR_JDBC_PASSWORD = "npg_3oPHcnhxz7er"

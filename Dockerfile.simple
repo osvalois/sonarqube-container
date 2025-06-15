@@ -64,36 +64,71 @@ RUN { \
         echo '    cp -f /usr/local/share/sonarqube-plugins/sonar-cnes-report-plugin.jar /opt/sonarqube/extensions/plugins/ || true'; \
         echo 'fi'; \
         echo ''; \
-        echo '# Start SonarQube directly with JAR'; \
+        echo '# Create health check function'; \
+        echo 'health_check() {'; \
+        echo '    for i in {1..10}; do'; \
+        echo '        if curl -s -f http://localhost:${PORT:-8080}/api/system/status >/dev/null; then'; \
+        echo '            echo "✅ SonarQube is up and running!"'; \
+        echo '            return 0'; \
+        echo '        fi'; \
+        echo '        echo "⏳ Waiting for SonarQube to start... ($i/10)"'; \
+        echo '        sleep 30'; \
+        echo '    done'; \
+        echo '    echo "❌ Failed to start SonarQube within timeout period"'; \
+        echo '    return 1'; \
+        echo '}'; \
+        echo ''; \
+        echo '# Start SonarQube with reduced memory settings'; \
         echo 'echo "🚀 Launching SonarQube..."'; \
-        echo 'exec java \\'; \
+        echo 'java \\'; \
         echo '    -Djava.security.egd=file:/dev/./urandom \\'; \
         echo '    -Dfile.encoding=UTF-8 \\'; \
         echo '    -Dsonar.web.port=${PORT:-8080} \\'; \
         echo '    -Dsonar.web.host=0.0.0.0 \\'; \
-        echo '    -Dsonar.search.javaOpts="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m" \\'; \
+        echo '    -Dsonar.search.javaOpts="-Xmx512m -Xms256m -XX:MaxDirectMemorySize=256m" \\'; \
         echo '    -Dsonar.search.javaAdditionalOpts="-XX:+UseG1GC" \\'; \
         echo '    -Dsonar.telemetry.enable=false \\'; \
         echo '    -Dsonar.log.level=INFO \\'; \
         echo '    -Dsonar.forceAuthentication=false \\'; \
-        echo '    -Dsonar.web.javaOpts="-Xmx2g -Xms1g -XX:+UseG1GC" \\'; \
-        echo '    -Dsonar.ce.javaOpts="-Xmx1g -Xms512m -XX:+UseG1GC" \\'; \
+        echo '    -Dsonar.web.javaOpts="-Xmx1g -Xms512m -XX:+UseG1GC" \\'; \
+        echo '    -Dsonar.ce.javaOpts="-Xmx1g -Xms256m -XX:+UseG1GC" \\'; \
         echo '    -Dsonar.cluster.enabled=false \\'; \
         echo '    -Dsonar.es.bootstrap.checks.disable=true \\'; \
-        echo '    -jar "$SONAR_APP_JAR"'; \
+        echo '    -Dsonar.web.context=/ \\'; \
+        echo '    -Dsonar.web.javaAdditionalOpts="-Djava.security.egd=file:/dev/urandom" \\'; \
+        echo '    -jar "$SONAR_APP_JAR" &'; \
+        echo ''; \
+        echo '# Store PID of Java process'; \
+        echo 'SONAR_PID=$!'; \
+        echo ''; \
+        echo '# Wait for SonarQube to be available'; \
+        echo 'health_check'; \
+        echo 'HEALTH_STATUS=$?'; \
+        echo ''; \
+        echo 'if [ $HEALTH_STATUS -eq 0 ]; then'; \
+        echo '    echo "🌟 SonarQube started successfully!"'; \
+        echo '    # Wait for the Java process'; \
+        echo '    wait $SONAR_PID'; \
+        echo 'else'; \
+        echo '    echo "💥 SonarQube failed to start properly"'; \
+        echo '    # Kill Java process if it is still running'; \
+        echo '    kill $SONAR_PID 2>/dev/null || true'; \
+        echo '    exit 1'; \
+        echo 'fi'; \
     } > /usr/local/bin/railway-entrypoint.sh && \
     chmod +x /usr/local/bin/railway-entrypoint.sh
 
-# Environment variables for Railway
+# Environment variables for Railway with reduced memory settings
 ENV RUN_AS_ROOT=true
 ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 ENV SONAR_TELEMETRY_ENABLE=false
 ENV SONAR_WEB_PORT=8080
 ENV PORT=8080
 ENV SONAR_WEB_HOST=0.0.0.0
-ENV SONAR_SEARCH_JAVA_OPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
-ENV SONAR_CE_JAVA_OPTS="-Xmx1g -Xms512m -XX:+UseG1GC"
-ENV SONAR_WEB_JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC"
+ENV SONAR_SEARCH_JAVA_OPTS="-Xmx512m -Xms256m -XX:MaxDirectMemorySize=256m"
+ENV SONAR_CE_JAVA_OPTS="-Xmx1g -Xms256m -XX:+UseG1GC"
+ENV SONAR_WEB_JAVA_OPTS="-Xmx1g -Xms512m -XX:+UseG1GC"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=70"
 
 # Expose default port
 EXPOSE 8080
