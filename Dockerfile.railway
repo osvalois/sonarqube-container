@@ -47,16 +47,17 @@ RUN chmod +x /usr/local/bin/start-railway.sh
 # Custom configuration
 RUN echo "sonar.web.host=0.0.0.0" > /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.web.port=9000" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.search.javaOpts=-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.ce.javaOpts=-Xmx512m -Xms256m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.web.javaOpts=-Xmx512m -Xms256m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.search.javaOpts=-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.ce.javaOpts=-Xmx1g -Xms512m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.web.javaOpts=-Xmx1g -Xms512m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.telemetry.enable=false" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.updatecenter.activate=false" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.path.data=/opt/sonarqube/data" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.path.logs=/opt/sonarqube/logs" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.path.temp=/opt/sonarqube/temp" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.search.httpPort=9001" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.ce.workerCount=4" >> /opt/sonarqube/conf/sonar.properties
+    echo "sonar.ce.workerCount=4" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.search.javaAdditionalOpts=-Des.bootstrap.checks=false" >> /opt/sonarqube/conf/sonar.properties
 
 # Create Elasticsearch configuration directory and file
 RUN mkdir -p /opt/sonarqube/temp/conf/es && \
@@ -81,12 +82,12 @@ ENV SONAR_TELEMETRY_ENABLE="false"
 ENV SONAR_UPDATECENTER_ACTIVATE="false"
 ENV SONAR_WEB_HOST="0.0.0.0"
 ENV SONAR_WEB_PORT="9000"
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
-ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
-ENV SONAR_WEB_JAVAOPTS="-Xmx512m -Xms256m -XX:+UseSerialGC"
-ENV SONAR_CE_JAVAOPTS="-Xmx512m -Xms256m -XX:+UseSerialGC"
-ENV SONAR_SEARCH_JAVAOPTS="-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
-ENV ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV SONAR_WEB_JAVAOPTS="-Xmx1g -Xms512m -XX:+UseSerialGC"
+ENV SONAR_CE_JAVAOPTS="-Xmx1g -Xms512m -XX:+UseSerialGC"
+ENV SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+ENV ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
 ENV SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false"
 
 # Expose web port

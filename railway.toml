@@ -15,17 +15,17 @@ startupTimeout = 1800
 [env]
 # Elasticsearch bootstrap configuration
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false"
-SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false"
+ES_JAVA_OPTS = "-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
 
 # Java optimization
-JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
-JAVA_TOOL_OPTIONS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+JAVA_TOOL_OPTIONS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 # JVM memory settings
-SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
-SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
-SONAR_SEARCH_JAVAOPTS = "-Xmx512m -Xms256m"
+SONAR_WEB_JAVAOPTS = "-Xmx1g -Xms512m -XX:+UseSerialGC"
+SONAR_CE_JAVAOPTS = "-Xmx1g -Xms512m -XX:+UseSerialGC"
+SONAR_SEARCH_JAVAOPTS = "-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
 
 # Network settings
 SONAR_WEB_PORT = "9000"
