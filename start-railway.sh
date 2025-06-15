@@ -62,17 +62,20 @@ else
 fi
 
 # Update sonar.properties with Railway settings
-if [ -w "/opt/sonarqube/conf/sonar.properties" ]; then
-    echo "📝 Updating sonar.properties..."
-    {
-        echo ""
-        echo "# Railway-specific settings"
-        echo "sonar.web.port=${PORT:-8080}"
-        echo "sonar.web.host=0.0.0.0"
-        echo "sonar.search.javaOpts=-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
-        echo "sonar.search.javaAdditionalOpts=${SONAR_SEARCH_JAVAADDITIONALOPTS}"
-    } >> /opt/sonarqube/conf/sonar.properties
-fi
+echo "📝 Updating sonar.properties..."
+{
+    echo ""
+    echo "# Railway-specific settings"
+    echo "sonar.web.port=${PORT:-8080}"
+    echo "sonar.web.host=0.0.0.0"
+    echo "# Elasticsearch memory settings - CRITICAL FIX"
+    echo "sonar.search.javaOpts=-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
+    echo "sonar.search.javaAdditionalOpts=-XX:+UseG1GC"
+    echo "# Database settings"
+    echo "sonar.jdbc.url=${SONAR_JDBC_URL:-}"
+    echo "sonar.jdbc.username=${SONAR_JDBC_USERNAME:-}"
+    echo "sonar.jdbc.password=${SONAR_JDBC_PASSWORD:-}"
+} >> /opt/sonarqube/conf/sonar.properties
 
 # Start SonarQube directly with JAR
 echo "🚀 Launching SonarQube..."
@@ -81,6 +84,8 @@ exec java \
     -Dfile.encoding=UTF-8 \
     -Dsonar.web.port=${PORT:-8080} \
     -Dsonar.web.host=0.0.0.0 \
+    -Dsonar.search.javaOpts="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m" \
+    -Dsonar.search.javaAdditionalOpts="-XX:+UseG1GC" \
     $SONAR_WEB_JAVAADDITIONALOPTS \
     $SONAR_CE_JAVAADDITIONALOPTS \
     -jar "$SONAR_APP_JAR"
