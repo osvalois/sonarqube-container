@@ -31,10 +31,14 @@ RUN set -eux; \
         curl \
         ca-certificates \
         gnupg \
-        lsb-release && \
+        lsb-release \
+        wget \
+        unzip && \
     rm -rf /var/lib/apt/lists/*; \
-    mkdir -p "${SONARQUBE_HOME}/extensions/plugins"; \
-    chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins";
+    mkdir -p "${SONARQUBE_HOME}/extensions/plugins" \
+             "${SONARQUBE_HOME}/reports"; \
+    chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins" \
+                    "${SONARQUBE_HOME}/reports";
 
 # Add custom configuration for SonarQube 2025 (Railway-compatible)
 RUN { \
@@ -63,7 +67,22 @@ RUN { \
         echo "sonar.security.config.javasecurity=true"; \
         echo "sonar.security.config.pythonsecurity=true"; \
         echo "sonar.security.config.phpsecurity=true"; \
+        echo "# Report generation settings"; \
+        echo "sonar.plugins.downloadOnlyRequired=false"; \
+        echo "# Plugin configuration"; \
+        echo "sonar.web.javaAdditionalOpts=-Duser.timezone=UTC"; \
     } >> "${SONARQUBE_HOME}/conf/sonar.properties";
+
+# Download and install official SonarQube report plugins
+RUN set -eux; \
+    # Install CNES Report Plugin (latest version supporting SonarQube 10.x)
+    wget -O "${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-plugin.jar" \
+        "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar"; \
+    # Install SonarQube PDF Report Plugin
+    wget -O "${SONARQUBE_HOME}/extensions/plugins/sonar-pdf-report-plugin.jar" \
+        "https://github.com/SonarQubeCommunity/sonar-pdf-report/releases/download/4.0.1/sonar-pdf-report-4.0.1.jar"; \
+    # Set proper permissions
+    chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins";
 
 # Create optimized entrypoint script with health checks and graceful shutdown
 RUN { \
