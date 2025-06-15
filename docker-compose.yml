@@ -20,23 +20,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 300s
-    environment:
-      - SONAR_JDBC_URL=jdbc:postgresql://ep-floral-bush-a5ns5s26-pooler.us-east-2.aws.neon.tech/shsonar?user=shsonar_owner&password=npg_3oPHcnhxz7er&sslmode=require
-      - SONAR_JDBC_USERNAME=shsonar_owner
-      - SONAR_JDBC_PASSWORD=npg_3oPHcnhxz7er
-      - SONARQUBE_VERSION=${SONARQUBE_VERSION:-2025.3}
-      - SONAR_WEB_CONTEXT=/
-      - SONAR_WEB_HOST=0.0.0.0
-      - SONAR_WEB_PORT=9000
-      - SONAR_SECURITY_REALM=
-      - SONAR_AUTHENTICATOR_DOWNCASE=false
-      # Performance optimizations for 2025
-      - JAVA_OPTS=-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport
-      # For production, set vm.max_map_count=262144 on the host system instead
-      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-      # Security enhancements
-      - SONAR_TELEMETRY_ENABLE=false
-      - SONAR_UPDATECENTER_ACTIVATE=false
+    env_file:
+      - .env
     ulimits:
       memlock:
         soft: -1
@@ -54,18 +39,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 8G
+          cpus: '${DEPLOY_CPU_LIMIT:-4}'
+          memory: ${DEPLOY_MEMORY_LIMIT:-8G}
         reservations:
-          cpus: '2'
-          memory: 4G
+          cpus: '${DEPLOY_CPU_RESERVATION:-2}'
+          memory: ${DEPLOY_MEMORY_RESERVATION:-4G}
 
 networks:
   sonarqube-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
 
 volumes:
   sonarqube_data:

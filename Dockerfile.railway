@@ -1,0 +1,93 @@
+# Use SonarQube Community Edition - Latest stable version
+# Optimized for Railway deployment
+FROM sonarqube:community
+
+# Build arguments for metadata
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG VCS_REF
+
+# Switch to root for installation
+USER root
+
+# Metadata following OCI Image Specification
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
+LABEL org.opencontainers.image.source="https://github.com/osvalois/sonarqube-container"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.vendor="Oscar Valois"
+LABEL org.opencontainers.image.title="SonarQube DevSecOps 2025 for Railway"
+LABEL org.opencontainers.image.description="SonarQube 2025 Latest optimized for Railway deployment"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
+
+# Install dependencies with security updates
+RUN set -eux; \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        gnupg \
+        lsb-release && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add custom configuration for Railway
+RUN { \
+        echo "# Railway-specific configuration"; \
+        echo "sonar.web.host=0.0.0.0"; \
+        echo "sonar.web.port=${PORT:-9000}"; \
+        echo "# Disable Elasticsearch bootstrap checks for Railway"; \
+        echo "sonar.search.javaOpts=-Xmx1024m -Xms1024m -XX:+UseG1GC -Des.enforce.bootstrap.checks=false"; \
+        echo "# Performance tuning for Railway containers"; \
+        echo "sonar.web.javaOpts=-Xmx1024m -Xms512m -XX:+UseG1GC"; \
+        echo "sonar.ce.javaOpts=-Xmx768m -Xms256m -XX:+UseG1GC"; \
+        echo "# Disable telemetry"; \
+        echo "sonar.telemetry.enable=false"; \
+    } >> "${SONARQUBE_HOME}/conf/sonar.properties"
+
+# Create Railway-optimized entrypoint
+RUN { \
+        printf "#!/bin/bash\n"; \
+        printf "set -euo pipefail\n"; \
+        printf "\n"; \
+        printf "# Railway runs as root by default\n"; \
+        printf "export RUN_AS_ROOT=true\n"; \
+        printf "\n"; \
+        printf "# Use PORT from Railway environment\n"; \
+        printf "export SONAR_WEB_PORT=\${PORT:-9000}\n"; \
+        printf "\n"; \
+        printf "# Disable Elasticsearch bootstrap checks\n"; \
+        printf "export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true\n"; \
+        printf "\n"; \
+        printf "# Find the sonar-application JAR dynamically\n"; \
+        printf "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)\n"; \
+        printf "\n"; \
+        printf "if [ -z \"\$SONAR_APP_JAR\" ]; then\n"; \
+        printf "    echo \"ERROR: Could not find sonar-application JAR file\"\n"; \
+        printf "    exit 1\n"; \
+        printf "fi\n"; \
+        printf "\n"; \
+        printf "echo \"Starting SonarQube on Railway with port \$SONAR_WEB_PORT\"\n"; \
+        printf "echo \"Database URL: \${SONAR_JDBC_URL:-Not configured}\"\n"; \
+        printf "\n"; \
+        printf "# Execute with Railway-optimized settings\n"; \
+        printf "exec java \\\\\n"; \
+        printf "    -Djava.security.egd=file:/dev/./urandom \\\\\n"; \
+        printf "    -Dfile.encoding=UTF-8 \\\\\n"; \
+        printf "    -Dsonar.web.port=\$SONAR_WEB_PORT \\\\\n"; \
+        printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
+        printf "    \"\$@\"\n"; \
+    } > /usr/local/bin/railway-entrypoint.sh && \
+    chmod +x /usr/local/bin/railway-entrypoint.sh
+
+# Environment variables for Railway
+ENV RUN_AS_ROOT=true
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+
+# Expose default port (Railway will override with PORT env var)
+EXPOSE 9000
+
+# Use Railway-optimized entrypoint
+ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
