@@ -97,15 +97,24 @@ To add plugins later, you can:
 ## Troubleshooting
 
 ### Elasticsearch Bootstrap Check Failed (vm.max_map_count)
-Si ves este error: `max virtual memory areas vm.max_map_count [65530] is too low`
+If you see this error: `max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]`
 
 ```bash
-# Solución para macOS (temporal):
+# For Linux (permanent fix):
+sudo sysctl -w vm.max_map_count=262144
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+
+# For macOS (temporary fix for Docker Desktop):
 docker run --rm --privileged alpine sysctl -w vm.max_map_count=262144
 
-# Luego reinicia los servicios:
+# For Windows (WSL-based Docker Desktop):
+wsl -d docker-desktop -e sysctl -w vm.max_map_count=262144
+
+# Then restart the services:
 docker-compose down && docker-compose up -d
 ```
+
+See [DOCKER_HOST_REQUIREMENTS.md](DOCKER_HOST_REQUIREMENTS.md) for detailed instructions.
 
 ### Port Already in Use
 ```bash
