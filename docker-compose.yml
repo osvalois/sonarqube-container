@@ -15,6 +15,7 @@ services:
       - SONAR_WEB_PORT=9000
       - SONAR_SECURITY_REALM=
       - SONAR_AUTHENTICATOR_DOWNCASE=false
+      # Force disable Elasticsearch bootstrap checks to avoid vm.max_map_count issues
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     ulimits:
       memlock:

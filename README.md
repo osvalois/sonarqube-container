@@ -25,6 +25,9 @@ This repository contains the configuration files and instructions for deploying 
 
 - Docker and Docker Compose installed on your local machine.
 - Sufficient disk space for SonarQube data and PostgreSQL database.
+- **Important host configuration**: SonarQube requires specific system settings:
+  - Set `vm.max_map_count=262144` on your host system (see [DOCKER_HOST_REQUIREMENTS.md](DOCKER_HOST_REQUIREMENTS.md))
+  - This prevents the common Elasticsearch bootstrap failure error
 
 ## Quick Start
 
@@ -100,6 +103,19 @@ docker-compose logs sonarqube
 2. Ensure the required ports are not in use by other services.
 
 3. Verify that the volumes have correct permissions.
+
+4. If you see Elasticsearch bootstrap failures, check your host's virtual memory settings:
+```sh
+# Check current value
+sysctl vm.max_map_count
+
+# Set the correct value
+sudo sysctl -w vm.max_map_count=262144
+
+# Make it permanent
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+```
+See [DOCKER_HOST_REQUIREMENTS.md](DOCKER_HOST_REQUIREMENTS.md) for detailed instructions.
 
 ## Contributing
 

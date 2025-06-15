@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+# Try to increase vm.max_map_count if running with appropriate privileges
+if [ "$(id -u)" = "0" ]; then
+    echo "Attempting to set vm.max_map_count to 262144..."
+    if sysctl -w vm.max_map_count=262144 2>/dev/null; then
+        echo "Successfully set vm.max_map_count to 262144"
+    else
+        echo "WARNING: Could not set vm.max_map_count. If you encounter Elasticsearch bootstrap errors,"
+        echo "         please ensure vm.max_map_count=262144 is set on the Docker host."
+        echo "         See DOCKER_HOST_REQUIREMENTS.md for more information."
+    fi
+fi
+
 # Change ownership of required directories to sonarqube user
 chown -R sonarqube:sonarqube "$SQ_DATA_DIR" "$SQ_EXTENSIONS_DIR" "$SQ_LOGS_DIR" "$SQ_TEMP_DIR"
 
