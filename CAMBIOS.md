@@ -112,6 +112,18 @@ Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de 
 - Actualizado el script start-railway.sh para exportar JAVA_TOOL_OPTIONS sin opciones GC conflictivas
 - Asegurado que cada componente (Web, CE, Search) usa su propio recolector de basura explícito
 
+### Solución radical para conflictos de recolectores de basura (15/06/2025)
+
+#### 1. Eliminación completa de especificaciones de GC
+- Eliminado completamente `-XX:+UseSerialGC` de todas las configuraciones
+- Mantenido únicamente la configuración de memoria (Xms, Xmx, MaxDirectMemorySize)
+- Permitir que la JVM seleccione automáticamente el recolector de basura apropiado
+
+#### 2. Configuración unificada
+- Asegurado que las opciones de JVM son consistentes en todos los archivos
+- Simplificado las variables de entorno para evitar opciones duplicadas o conflictivas
+- Mantenido configuraciones explícitas solo para la memoria y las propiedades de Elasticsearch
+
 ## Beneficios de las Soluciones
 
 ### Beneficios de la solución original
@@ -130,6 +142,12 @@ Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de 
 1. **Arranque estable**: Eliminación de errores de inicialización de la JVM
 2. **Consistencia de GC**: Cada componente usa un recolector de basura adecuado
 3. **Optimización de recursos**: Mantenimiento de la configuración de porcentaje de RAM
+
+### Beneficios de la solución radical para conflictos de GC
+1. **Compatibilidad máxima**: Eliminación de todos los conflictos potenciales de GC
+2. **Configuración simplificada**: Enfoque en los parámetros esenciales de memoria
+3. **Adaptabilidad**: Permitir que la JVM seleccione la mejor estrategia de GC
+4. **Mantenibilidad**: Reducción de la complejidad en la configuración
 
 ## Resultado Esperado
 
