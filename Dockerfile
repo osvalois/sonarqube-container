@@ -52,7 +52,7 @@ RUN { \
         echo "sonar.search.javaOpts=-Xmx1g -Xms1g -XX:+UseG1GC"; \
         echo "# Railway compatibility"; \
         echo "sonar.web.host=0.0.0.0"; \
-        echo "sonar.web.port=\${PORT:-9000}"; \
+        echo "sonar.web.port=\${PORT:-8080}"; \
         echo "# Modern SonarQube 2025 features with AI capabilities"; \
         echo "sonar.forceAuthentication=false"; \
         echo "sonar.log.level=INFO"; \
@@ -105,7 +105,7 @@ RUN { \
         printf "\n"; \
         printf "# Health check function\n"; \
         printf "health_check() {\n"; \
-        printf "    curl -fs http://localhost:9000/api/system/status || exit 1\n"; \
+        printf "    curl -fs http://localhost:\${PORT:-8080}/api/system/status || exit 1\n"; \
         printf "}\n"; \
         printf "\n"; \
         printf "# Find the sonar-application JAR dynamically\n"; \
@@ -118,14 +118,14 @@ RUN { \
         printf "\n"; \
         printf "echo \"Starting SonarQube 2025 with: \$SONAR_APP_JAR\"\n"; \
         printf "echo \"Container optimized for 2025 with Railway support\"\n"; \
-        printf "echo \"Port: \${PORT:-9000}\"\n"; \
+        printf "echo \"Port: \${PORT:-8080}\"\n"; \
         printf "echo \"Database: \${SONAR_JDBC_URL:-Not configured}\"\n"; \
         printf "\n"; \
         printf "# Execute with Railway-compatible options\n"; \
         printf "exec java \\\\\n"; \
         printf "    -Djava.security.egd=file:/dev/./urandom \\\\\n"; \
         printf "    -Dfile.encoding=UTF-8 \\\\\n"; \
-        printf "    -Dsonar.web.port=\${PORT:-9000} \\\\\n"; \
+        printf "    -Dsonar.web.port=\${PORT:-8080} \\\\\n"; \
         printf "    \${SONAR_WEB_JAVAADDITIONALOPTS} \\\\\n"; \
         printf "    \${SONAR_CE_JAVAADDITIONALOPTS} \\\\\n"; \
         printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
@@ -135,7 +135,7 @@ RUN { \
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
-    CMD curl -fs http://localhost:9000/api/system/status || exit 1
+    CMD curl -fs http://localhost:${PORT:-8080}/api/system/status || exit 1
 
 # Switch back to sonarqube user for security
 USER sonarqube
@@ -143,7 +143,7 @@ USER sonarqube
 # Environment variables optimized for Railway and containers
 ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
 ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
-ENV SONAR_SEARCH_JAVAADDITIONALOPTS="-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m"
+ENV SONAR_SEARCH_JAVAADDITIONALOPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport"
 
 # Railway compatibility flags
@@ -152,11 +152,11 @@ ENV SONAR_TELEMETRY_ENABLE=false
 ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 
 # Expose default port
-EXPOSE 9000
+EXPOSE 8080
 
 # Copy Railway-specific startup script
 COPY --chown=sonarqube:root start-railway.sh /opt/sonarqube/bin/start-railway.sh
 RUN chmod +x /opt/sonarqube/bin/start-railway.sh
 
-# Use the optimized entrypoint
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Use the optimized entrypoint - Railway will override with start-railway.sh if needed
+ENTRYPOINT ["/opt/sonarqube/bin/start-railway.sh"]
