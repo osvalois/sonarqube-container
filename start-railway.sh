@@ -42,16 +42,15 @@ echo "🧠 Optimizing memory settings..."
 export SONAR_WEB_JAVAADDITIONALOPTS="${SONAR_WEB_JAVAADDITIONALOPTS} -XX:+ExitOnOutOfMemoryError"
 export SONAR_CE_JAVAADDITIONALOPTS="${SONAR_CE_JAVAADDITIONALOPTS} -XX:+ExitOnOutOfMemoryError"
 
-# Create wrapper script to override Elasticsearch memory
-cat > /tmp/sonar-override.sh << 'EOF'
-#!/bin/bash
-# Override Elasticsearch memory settings
-export ES_JAVA_OPTS="-Xms512m -Xmx1g"
+# Find the sonar-application JAR dynamically
+SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
 
-# Find and execute the original sonar script
-exec /opt/sonarqube/bin/linux-x86-64/sonar.sh "$@"
-EOF
-chmod +x /tmp/sonar-override.sh
+if [ -z "$SONAR_APP_JAR" ]; then
+    echo "❌ ERROR: Could not find sonar-application JAR file"
+    exit 1
+fi
+
+echo "📦 Found SonarQube JAR: $SONAR_APP_JAR"
 
 # Plugin verification
 echo "🔌 Verifying plugins..."
@@ -75,6 +74,13 @@ if [ -w "/opt/sonarqube/conf/sonar.properties" ]; then
     } >> /opt/sonarqube/conf/sonar.properties
 fi
 
-# Start SonarQube
+# Start SonarQube directly with JAR
 echo "🚀 Launching SonarQube..."
-exec /tmp/sonar-override.sh console
+exec java \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dfile.encoding=UTF-8 \
+    -Dsonar.web.port=${PORT:-8080} \
+    -Dsonar.web.host=0.0.0.0 \
+    $SONAR_WEB_JAVAADDITIONALOPTS \
+    $SONAR_CE_JAVAADDITIONALOPTS \
+    -jar "$SONAR_APP_JAR"
