@@ -1,5 +1,5 @@
 # Use SonarQube Community Edition - Latest stable version
-# Optimized for Railway deployment
+# Optimized for Railway deployment with 8 vCPU and 8 GB memory
 FROM sonarqube:community
 
 # Build arguments for metadata
@@ -30,64 +30,116 @@ RUN set -eux; \
         curl \
         ca-certificates \
         gnupg \
-        lsb-release && \
+        lsb-release \
+        procps && \
     rm -rf /var/lib/apt/lists/*
 
-# Add custom configuration for Railway
+# Create all required directories and ensure they have proper permissions
+RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions \
+    /opt/sonarqube/logs /opt/sonarqube/temp && \
+    chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions \
+    /opt/sonarqube/logs /opt/sonarqube/temp
+
+# Add custom configuration for Railway using environment variables
 RUN { \
         echo "# Railway-specific configuration"; \
         echo "sonar.web.host=0.0.0.0"; \
-        echo "sonar.web.port=${PORT:-9000}"; \
-        echo "# Disable Elasticsearch bootstrap checks for Railway"; \
-        echo "sonar.search.javaOpts=-Xmx1024m -Xms1024m -XX:+UseG1GC -Des.enforce.bootstrap.checks=false"; \
-        echo "# Performance tuning for Railway containers"; \
-        echo "sonar.web.javaOpts=-Xmx1024m -Xms512m -XX:+UseG1GC"; \
-        echo "sonar.ce.javaOpts=-Xmx768m -Xms256m -XX:+UseG1GC"; \
-        echo "# Disable telemetry"; \
+        echo "sonar.web.port=8080"; \
         echo "sonar.telemetry.enable=false"; \
-    } >> "${SONARQUBE_HOME}/conf/sonar.properties"
+        echo "sonar.updatecenter.activate=false"; \
+        echo ""; \
+        echo "# Performance tuning"; \
+        echo "sonar.search.httpPort=9001"; \
+        echo "sonar.ce.workerCount=4"; \
+    } > "${SONARQUBE_HOME}/conf/sonar.properties"
 
-# Create Railway-optimized entrypoint
+# Create Railway-optimized entrypoint script
 RUN { \
         printf "#!/bin/bash\n"; \
         printf "set -euo pipefail\n"; \
         printf "\n"; \
-        printf "# Railway runs as root by default\n"; \
-        printf "export RUN_AS_ROOT=true\n"; \
+        printf "echo \"🚀 Starting SonarQube for Railway - divine-intuition (8 vCPU, 8GB RAM)\"\n"; \
+        printf "echo \"🌐 Domain: sonarqube-container-production-a7e6.up.railway.app\"\n"; \
+        printf "echo \"🔌 Port: \${PORT:-8080}\"\n"; \
         printf "\n"; \
-        printf "# Use PORT from Railway environment\n"; \
-        printf "export SONAR_WEB_PORT=\${PORT:-9000}\n"; \
+        printf "# Create required directories with correct permissions\n"; \
+        printf "mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp\n"; \
+        printf "chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp\n"; \
         printf "\n"; \
-        printf "# Disable Elasticsearch bootstrap checks\n"; \
-        printf "export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true\n"; \
+        printf "# Database connection check\n"; \
+        printf "if [ -n \"\${SONAR_JDBC_URL:-}\" ]; then\n"; \
+        printf "    echo \"✅ Database URL configured: \${SONAR_JDBC_URL}\"\n"; \
+        printf "else\n"; \
+        printf "    echo \"⚠️  No database URL configured. Using embedded H2 database (not recommended for production)\"\n"; \
+        printf "fi\n"; \
         printf "\n"; \
         printf "# Find the sonar-application JAR dynamically\n"; \
         printf "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)\n"; \
         printf "\n"; \
         printf "if [ -z \"\$SONAR_APP_JAR\" ]; then\n"; \
-        printf "    echo \"ERROR: Could not find sonar-application JAR file\"\n"; \
+        printf "    echo \"❌ ERROR: Could not find sonar-application JAR file\"\n"; \
         printf "    exit 1\n"; \
         printf "fi\n"; \
         printf "\n"; \
-        printf "echo \"Starting SonarQube on Railway with port \$SONAR_WEB_PORT\"\n"; \
-        printf "echo \"Database URL: \${SONAR_JDBC_URL:-Not configured}\"\n"; \
+        printf "echo \"📦 Found SonarQube JAR: \$SONAR_APP_JAR\"\n"; \
+        printf "\n"; \
+        printf "# Plugin verification\n"; \
+        printf "echo \"🔌 Verifying plugins...\"\n"; \
+        printf "ls -la /opt/sonarqube/extensions/plugins/\n"; \
+        printf "\n"; \
+        printf "# Memory settings display\n"; \
+        printf "echo \"🧠 Memory settings:\"\n"; \
+        printf "echo \"JAVA_OPTS: \${JAVA_OPTS:-Not set}\"\n"; \
+        printf "echo \"SONAR_WEB_JAVAOPTS: \${SONAR_WEB_JAVAOPTS:-Not set}\"\n"; \
+        printf "echo \"SONAR_WEB_JAVAADDITIONALOPTS: \${SONAR_WEB_JAVAADDITIONALOPTS:-Not set}\"\n"; \
+        printf "echo \"SONAR_CE_JAVAOPTS: \${SONAR_CE_JAVAOPTS:-Not set}\"\n"; \
+        printf "echo \"SONAR_CE_JAVAADDITIONALOPTS: \${SONAR_CE_JAVAADDITIONALOPTS:-Not set}\"\n"; \
+        printf "echo \"SONAR_SEARCH_JAVAOPTS: \${SONAR_SEARCH_JAVAOPTS:-Not set}\"\n"; \
         printf "\n"; \
         printf "# Execute with Railway-optimized settings\n"; \
+        printf "echo \"🚀 Launching SonarQube with optimized settings...\"\n"; \
         printf "exec java \\\\\n"; \
         printf "    -Djava.security.egd=file:/dev/./urandom \\\\\n"; \
         printf "    -Dfile.encoding=UTF-8 \\\\\n"; \
-        printf "    -Dsonar.web.port=\$SONAR_WEB_PORT \\\\\n"; \
+        printf "    \${JAVA_OPTS:+-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0} \\\\\n"; \
+        printf "    -Dsonar.web.port=\${SONAR_WEB_PORT:-8080} \\\\\n"; \
+        printf "    -Dsonar.web.host=\${SONAR_WEB_HOST:-0.0.0.0} \\\\\n"; \
+        printf "    -Dsonar.search.javaOpts=\"\${SONAR_SEARCH_JAVAOPTS:-'-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m'}\" \\\\\n"; \
+        printf "    -Dsonar.web.javaOpts=\"\${SONAR_WEB_JAVAOPTS:-'-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200'}\" \\\\\n"; \
+        printf "    -Dsonar.web.javaAdditionalOpts=\"\${SONAR_WEB_JAVAADDITIONALOPTS:-'-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError'}\" \\\\\n"; \
+        printf "    -Dsonar.ce.javaOpts=\"\${SONAR_CE_JAVAOPTS:-'-Xmx2g -Xms512m -XX:+UseG1GC'}\" \\\\\n"; \
+        printf "    -Dsonar.ce.javaAdditionalOpts=\"\${SONAR_CE_JAVAADDITIONALOPTS:-'-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError'}\" \\\\\n"; \
+        printf "    -Dsonar.telemetry.enable=\${SONAR_TELEMETRY_ENABLE:-false} \\\\\n"; \
+        printf "    -Dsonar.updatecenter.activate=\${SONAR_UPDATECENTER_ACTIVATE:-false} \\\\\n"; \
+        printf "    -Dsonar.log.level=INFO \\\\\n"; \
+        printf "    -Dsonar.ce.workerCount=4 \\\\\n"; \
+        printf "    -Dsonar.cluster.enabled=false \\\\\n"; \
+        printf "    -Dsonar.es.bootstrap.checks.disable=\${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE:-true} \\\\\n"; \
         printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
         printf "    \"\$@\"\n"; \
     } > /usr/local/bin/railway-entrypoint.sh && \
     chmod +x /usr/local/bin/railway-entrypoint.sh
 
-# Environment variables for Railway
-ENV RUN_AS_ROOT=true
-ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+# Ensure that all required directories have the right permissions
+RUN chown -R sonarqube:sonarqube "${SONARQUBE_HOME}"
 
-# Expose default port (Railway will override with PORT env var)
-EXPOSE 9000
+# Default environment variables matching Railway configuration
+ENV PORT="8080"
+ENV RUN_AS_ROOT="true"
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+ENV SONAR_TELEMETRY_ENABLE="false"
+ENV SONAR_UPDATECENTER_ACTIVATE="false"
+ENV SONAR_WEB_HOST="0.0.0.0"
+ENV SONAR_WEB_PORT="8080"
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV SONAR_WEB_JAVAOPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError"
+ENV SONAR_CE_JAVAOPTS="-Xmx2g -Xms512m -XX:+UseG1GC"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError"
+ENV SONAR_SEARCH_JAVAOPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
+
+# Expose web port
+EXPOSE 8080
 
 # Use Railway-optimized entrypoint
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]

@@ -1,46 +1,26 @@
 #!/bin/bash
-# Railway-specific startup script for SonarQube
+# Railway-specific startup script for SonarQube (8 vCPU, 8GB RAM)
 
 set -euo pipefail
 
-echo "🚀 Starting SonarQube for Railway deployment..."
-echo "📍 Instance: divine-intuition"
+echo "🚀 Starting SonarQube for Railway deployment - divine-intuition"
+echo "📍 Instance: divine-intuition (8 vCPU, 8GB RAM)"
 echo "🌐 Domain: sonarqube-container-production-a7e6.up.railway.app"
 echo "🔌 Port: ${PORT:-8080}"
-echo "💾 Memory: 8GB available"
 
-# Set Railway-specific environment variables
-export SONAR_WEB_PORT=${PORT:-8080}
-export SONAR_WEB_HOST=0.0.0.0
+# Environment variables for SonarQube components
+# These will be passed to the JVM automatically through the Dockerfile
 
-# Fix Elasticsearch memory settings
-export ES_JAVA_OPTS="-Xms512m -Xmx1g"
-export SONAR_SEARCH_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=256m"
-export SONAR_SEARCH_JAVAADDITIONALOPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=256m"
-
-# Override the default Elasticsearch settings
-export SONARQUBE_SEARCH_JVM_OPTS="-Xmx1g -Xms512m"
+# Create required directories with correct permissions
+mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp
+chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp
 
 # Database connection check
-echo "🔄 Checking database connection..."
-if [ -n "${DATABASE_URL:-}" ]; then
-    echo "✅ Database URL configured"
-    # Parse DATABASE_URL if it's in URL format
-    if [[ $DATABASE_URL =~ postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/(.+) ]]; then
-        export SONAR_JDBC_URL="jdbc:postgresql://${BASH_REMATCH[3]}:${BASH_REMATCH[4]}/${BASH_REMATCH[5]}"
-        export SONAR_JDBC_USERNAME="${BASH_REMATCH[1]}"
-        export SONAR_JDBC_PASSWORD="${BASH_REMATCH[2]}"
-    fi
-elif [ -n "${SONAR_JDBC_URL:-}" ]; then
-    echo "✅ SONAR_JDBC_URL configured: ${SONAR_JDBC_URL}"
+if [ -n "${SONAR_JDBC_URL:-}" ]; then
+    echo "✅ Database URL configured: ${SONAR_JDBC_URL}"
 else
-    echo "⚠️  Using embedded H2 database (not recommended for production)"
+    echo "⚠️  No database URL configured. Using embedded H2 database (not recommended for production)"
 fi
-
-# Memory optimization for Railway
-echo "🧠 Optimizing memory settings..."
-export SONAR_WEB_JAVAADDITIONALOPTS="${SONAR_WEB_JAVAADDITIONALOPTS} -XX:+ExitOnOutOfMemoryError"
-export SONAR_CE_JAVAADDITIONALOPTS="${SONAR_CE_JAVAADDITIONALOPTS} -XX:+ExitOnOutOfMemoryError"
 
 # Find the sonar-application JAR dynamically
 SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
@@ -54,44 +34,34 @@ echo "📦 Found SonarQube JAR: $SONAR_APP_JAR"
 
 # Plugin verification
 echo "🔌 Verifying plugins..."
-if [ -f "/opt/sonarqube/extensions/plugins/sonar-cnes-report-plugin.jar" ]; then
-    echo "✅ CNES Report Plugin installed"
-    ls -lh /opt/sonarqube/extensions/plugins/sonar-cnes-report-plugin.jar
-else
-    echo "❌ CNES Report Plugin not found!"
-fi
+ls -la /opt/sonarqube/extensions/plugins/
 
-# Configuration applied via system properties (no file modification needed)
-echo "📝 Configuration will be applied via system properties..."
-
-# We won't try to update sonar.properties directly, as it causes permission errors
-# Instead, we'll use system properties through Java command line
-
-# Apply configuration from our pre-created properties file
-if [ -f "/usr/local/bin/sonar-config.properties" ]; then
-    echo "🔧 Using pre-created configuration file..."
-    CONFIG_PROPS=$(cat /usr/local/bin/sonar-config.properties | grep -v "^#" | tr '\n' ' ' | sed 's/=/=/g')
-else
-    echo "⚠️ No pre-created configuration file found. Using defaults."
-    CONFIG_PROPS=""
-fi
+# Memory settings display
+echo "🧠 Memory settings:"
+echo "JAVA_OPTS: ${JAVA_OPTS:-Not set}"
+echo "SONAR_WEB_JAVAOPTS: ${SONAR_WEB_JAVAOPTS:-Not set}"
+echo "SONAR_WEB_JAVAADDITIONALOPTS: ${SONAR_WEB_JAVAADDITIONALOPTS:-Not set}"
+echo "SONAR_CE_JAVAOPTS: ${SONAR_CE_JAVAOPTS:-Not set}"
+echo "SONAR_CE_JAVAADDITIONALOPTS: ${SONAR_CE_JAVAADDITIONALOPTS:-Not set}"
+echo "SONAR_SEARCH_JAVAOPTS: ${SONAR_SEARCH_JAVAOPTS:-Not set}"
 
 # Start SonarQube directly with JAR
-echo "🚀 Launching SonarQube..."
+echo "🚀 Launching SonarQube with Railway-specific settings..."
 exec java \
     -Djava.security.egd=file:/dev/./urandom \
     -Dfile.encoding=UTF-8 \
-    -Dsonar.web.port=${PORT:-8080} \
-    -Dsonar.web.host=0.0.0.0 \
-    -Dsonar.search.javaOpts="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m" \
-    -Dsonar.search.javaAdditionalOpts="-XX:+UseG1GC" \
-    -Dsonar.telemetry.enable=false \
+    ${JAVA_OPTS:+-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0} \
+    -Dsonar.web.port=${SONAR_WEB_PORT:-8080} \
+    -Dsonar.web.host=${SONAR_WEB_HOST:-0.0.0.0} \
+    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS:-'-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m'}" \
+    -Dsonar.web.javaOpts="${SONAR_WEB_JAVAOPTS:-'-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200'}" \
+    -Dsonar.web.javaAdditionalOpts="${SONAR_WEB_JAVAADDITIONALOPTS:-'-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError'}" \
+    -Dsonar.ce.javaOpts="${SONAR_CE_JAVAOPTS:-'-Xmx2g -Xms512m -XX:+UseG1GC'}" \
+    -Dsonar.ce.javaAdditionalOpts="${SONAR_CE_JAVAADDITIONALOPTS:-'-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+ExitOnOutOfMemoryError'}" \
+    -Dsonar.telemetry.enable=${SONAR_TELEMETRY_ENABLE:-false} \
+    -Dsonar.updatecenter.activate=${SONAR_UPDATECENTER_ACTIVATE:-false} \
     -Dsonar.log.level=INFO \
-    -Dsonar.forceAuthentication=false \
-    -Dsonar.web.javaOpts="-Xmx2g -Xms1g -XX:+UseG1GC" \
-    -Dsonar.ce.javaOpts="-Xmx1g -Xms512m -XX:+UseG1GC" \
+    -Dsonar.ce.workerCount=4 \
     -Dsonar.cluster.enabled=false \
-    -Dsonar.es.bootstrap.checks.disable=true \
-    $SONAR_WEB_JAVAADDITIONALOPTS \
-    $SONAR_CE_JAVAADDITIONALOPTS \
+    -Dsonar.es.bootstrap.checks.disable=${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE:-true} \
     -jar "$SONAR_APP_JAR"
