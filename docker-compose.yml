@@ -34,6 +34,7 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_temp:/opt/sonarqube/temp
+      - sonarqube_reports:/opt/sonarqube/reports
     networks:
       - sonarqube-network
     deploy:
@@ -60,4 +61,6 @@ volumes:
   sonarqube_logs:
     driver: local
   sonarqube_temp:
+    driver: local
+  sonarqube_reports:
     driver: local
