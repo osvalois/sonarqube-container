@@ -1,5 +1,5 @@
 # Use SonarQube Community Edition - Latest stable version
-# Optimized for Railway deployment with 8 vCPU and 8 GB memory
+# Optimized for Railway deployment
 FROM sonarqube:community
 
 # Build arguments for metadata
@@ -40,138 +40,38 @@ RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions \
     chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions \
     /opt/sonarqube/logs /opt/sonarqube/temp
 
-# Add custom configuration for Railway
-RUN { \
-        echo "# Railway-specific configuration"; \
-        echo "sonar.web.host=0.0.0.0"; \
-        echo "sonar.web.port=9000"; \
-        echo "sonar.telemetry.enable=false"; \
-        echo "sonar.updatecenter.activate=false"; \
-        echo ""; \
-        echo "# Performance tuning"; \
-        echo "sonar.search.httpPort=9001"; \
-        echo "sonar.ce.workerCount=4"; \
-        echo ""; \
-        echo "# Critical Elasticsearch configuration for Railway"; \
-        echo "sonar.search.javaOpts=-Xmx512m -Xms256m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"; \
-        echo "sonar.path.data=/opt/sonarqube/data"; \
-        echo "sonar.path.logs=/opt/sonarqube/logs"; \
-        echo "sonar.path.temp=/opt/sonarqube/temp"; \
-    } > "/opt/sonarqube/conf/sonar.properties"
+# Create SonarQube configuration for Railway
+COPY start-railway.sh /usr/local/bin/start-railway.sh
+RUN chmod +x /usr/local/bin/start-railway.sh
 
-# Create a custom Elasticsearch configuration
+# Custom configuration
+RUN echo "sonar.web.host=0.0.0.0" > /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.web.port=9000" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.search.javaOpts=-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.ce.javaOpts=-Xmx512m -Xms256m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.web.javaOpts=-Xmx512m -Xms256m -XX:+UseSerialGC" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.telemetry.enable=false" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.updatecenter.activate=false" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.path.data=/opt/sonarqube/data" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.path.logs=/opt/sonarqube/logs" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.path.temp=/opt/sonarqube/temp" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.search.httpPort=9001" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.ce.workerCount=4" >> /opt/sonarqube/conf/sonar.properties
+
+# Create Elasticsearch configuration directory and file
 RUN mkdir -p /opt/sonarqube/temp/conf/es && \
-    { \
-        echo "# Railway-specific Elasticsearch configuration"; \
-        echo "node.name: sonarqube"; \
-        echo "cluster.name: sonarqube"; \
-        echo "discovery.type: single-node"; \
-        echo "cluster.routing.allocation.disk.threshold_enabled: false"; \
-        echo "bootstrap.system_call_filter: false"; \
-        echo "discovery.seed_hosts: 127.0.0.1"; \
-        echo "network.host: 127.0.0.1"; \
-        echo "transport.host: 127.0.0.1"; \
-        echo "http.host: 127.0.0.1"; \
-        echo "xpack.security.enabled: false"; \
-        echo "action.auto_create_index: false"; \
-    } > "/opt/sonarqube/temp/conf/es/elasticsearch.yml" && \
-    chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml
-
-# Create Railway-optimized entrypoint script
-RUN { \
-        printf "#!/bin/bash\n"; \
-        printf "set -euo pipefail\n"; \
-        printf "\n"; \
-        printf "echo \"🚀 Starting SonarQube for Railway - divine-intuition (8 vCPU, 8GB RAM)\"\n"; \
-        printf "echo \"🌐 Domain: sonarqube-container-production-a7e6.up.railway.app\"\n"; \
-        printf "echo \"🔌 Port: \${PORT:-9000}\"\n"; \
-        printf "\n"; \
-        printf "# Create required directories with correct permissions\n"; \
-        printf "mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp /opt/sonarqube/temp/conf/es\n"; \
-        printf "chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp\n"; \
-        printf "\n"; \
-        printf "# Make sure Elasticsearch config directory exists and has proper permissions\n"; \
-        printf "mkdir -p /opt/sonarqube/temp/conf/es\n"; \
-        printf "chmod -R 777 /opt/sonarqube/temp/conf/es\n"; \
-        printf "\n"; \
-        printf "# Create custom Elasticsearch config if it doesn't exist\n"; \
-        printf "if [ ! -f \"/opt/sonarqube/temp/conf/es/elasticsearch.yml\" ]; then\n"; \
-        printf "  echo \"Creating custom Elasticsearch configuration...\"\n"; \
-        printf "  cat > /opt/sonarqube/temp/conf/es/elasticsearch.yml << EOF\n"; \
-        printf "# Railway-specific Elasticsearch configuration\n"; \
-        printf "node.name: sonarqube\n"; \
-        printf "cluster.name: sonarqube\n"; \
-        printf "discovery.type: single-node\n"; \
-        printf "cluster.routing.allocation.disk.threshold_enabled: false\n"; \
-        printf "bootstrap.system_call_filter: false\n"; \
-        printf "discovery.seed_hosts: 127.0.0.1\n"; \
-        printf "network.host: 127.0.0.1\n"; \
-        printf "transport.host: 127.0.0.1\n"; \
-        printf "http.host: 127.0.0.1\n"; \
-        printf "xpack.security.enabled: false\n"; \
-        printf "action.auto_create_index: false\n"; \
-        printf "EOF\n"; \
-        printf "  chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml\n"; \
-        printf "fi\n"; \
-        printf "\n"; \
-        printf "# Database connection check\n"; \
-        printf "if [ -n \"\${SONAR_JDBC_URL:-}\" ]; then\n"; \
-        printf "    echo \"✅ Database URL configured: \${SONAR_JDBC_URL}\"\n"; \
-        printf "else\n"; \
-        printf "    echo \"⚠️  No database URL configured. Using embedded H2 database (not recommended for production)\"\n"; \
-        printf "fi\n"; \
-        printf "\n"; \
-        printf "# Find the sonar-application JAR dynamically\n"; \
-        printf "SONAR_APP_JAR=\$(find /opt/sonarqube/lib -name \"sonar-application-*.jar\" -type f | head -1)\n"; \
-        printf "\n"; \
-        printf "if [ -z \"\$SONAR_APP_JAR\" ]; then\n"; \
-        printf "    echo \"❌ ERROR: Could not find sonar-application JAR file\"\n"; \
-        printf "    exit 1\n"; \
-        printf "fi\n"; \
-        printf "\n"; \
-        printf "echo \"📦 Found SonarQube JAR: \$SONAR_APP_JAR\"\n"; \
-        printf "\n"; \
-        printf "# Plugin verification\n"; \
-        printf "echo \"🔌 Verifying plugins...\"\n"; \
-        printf "ls -la /opt/sonarqube/extensions/plugins/\n"; \
-        printf "\n"; \
-        printf "# Memory settings display\n"; \
-        printf "echo \"🧠 Memory settings:\"\n"; \
-        printf "echo \"JAVA_OPTS: \${JAVA_OPTS:-Not set}\"\n"; \
-        printf "echo \"SONAR_WEB_JAVAOPTS: \${SONAR_WEB_JAVAOPTS:-Not set}\"\n"; \
-        printf "echo \"SONAR_CE_JAVAOPTS: \${SONAR_CE_JAVAOPTS:-Not set}\"\n"; \
-        printf "echo \"SONAR_SEARCH_JAVAOPTS: \${SONAR_SEARCH_JAVAOPTS:-Not set}\"\n"; \
-        printf "\n"; \
-        printf "# Elasticsearch settings\n"; \
-        printf "echo \"🔍 Elasticsearch settings:\"\n"; \
-        printf "echo \"ES_JAVA_OPTS: \${ES_JAVA_OPTS:-Not set}\"\n"; \
-        printf "cat /opt/sonarqube/temp/conf/es/elasticsearch.yml\n"; \
-        printf "\n"; \
-        printf "# Export critical variables for Elasticsearch\n"; \
-        printf "export ES_JAVA_OPTS=\"\${ES_JAVA_OPTS:-'-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false'}\"\n"; \
-        printf "export SONAR_SEARCH_JAVAOPTS=\"\${SONAR_SEARCH_JAVAOPTS:-'-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false'}\"\n"; \
-        printf "\n"; \
-        printf "# Execute with Railway-optimized settings\n"; \
-        printf "echo \"🚀 Launching SonarQube with optimized settings...\"\n"; \
-        printf "exec java \\\\\n"; \
-        printf "    -Djava.security.egd=file:/dev/./urandom \\\\\n"; \
-        printf "    -Dfile.encoding=UTF-8 \\\\\n"; \
-        printf "    \${JAVA_OPTS:+-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0} \\\\\n"; \
-        printf "    -Dsonar.web.port=\${PORT:-9000} \\\\\n"; \
-        printf "    -Dsonar.web.host=\${SONAR_WEB_HOST:-0.0.0.0} \\\\\n"; \
-        printf "    -Dsonar.search.javaOpts=\"\${SONAR_SEARCH_JAVAOPTS:-'-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false'}\" \\\\\n"; \
-        printf "    -Dsonar.web.javaOpts=\"\${SONAR_WEB_JAVAOPTS:-'-Xmx512m -Xms256m -XX:+UseSerialGC'}\" \\\\\n"; \
-        printf "    -Dsonar.ce.javaOpts=\"\${SONAR_CE_JAVAOPTS:-'-Xmx512m -Xms256m -XX:+UseSerialGC'}\" \\\\\n"; \
-        printf "    -Dsonar.telemetry.enable=\${SONAR_TELEMETRY_ENABLE:-false} \\\\\n"; \
-        printf "    -Dsonar.updatecenter.activate=\${SONAR_UPDATECENTER_ACTIVATE:-false} \\\\\n"; \
-        printf "    -Dsonar.log.level=INFO \\\\\n"; \
-        printf "    -Dsonar.ce.workerCount=4 \\\\\n"; \
-        printf "    -Dsonar.cluster.enabled=false \\\\\n"; \
-        printf "    -Dsonar.es.bootstrap.checks.disable=\${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE:-true} \\\\\n"; \
-        printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
-        printf "    \"\$@\"\n"; \
-    } > /usr/local/bin/railway-entrypoint.sh && \
-    chmod +x /usr/local/bin/railway-entrypoint.sh
+    echo "node.name: sonarqube" > /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "cluster.name: sonarqube" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "discovery.type: single-node" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "bootstrap.system_call_filter: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "cluster.routing.allocation.disk.threshold_enabled: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "discovery.seed_hosts: 127.0.0.1" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "network.host: 127.0.0.1" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "transport.host: 127.0.0.1" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "http.host: 127.0.0.1" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "xpack.security.enabled: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "action.auto_create_index: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    chmod -R 777 /opt/sonarqube/temp/conf/es
 
 # Default environment variables matching Railway configuration from railway.toml
 ENV PORT="9000"
@@ -193,4 +93,4 @@ ENV SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false"
 EXPOSE 9000
 
 # Use Railway-optimized entrypoint
-ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/start-railway.sh"]

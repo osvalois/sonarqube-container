@@ -12,9 +12,10 @@ echo "🔌 Port: ${PORT:-9000}"
 mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp /opt/sonarqube/temp/conf/es
 chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp
 
-# Create custom Elasticsearch config
-echo "📝 Creating Elasticsearch configuration..."
-cat > /opt/sonarqube/temp/conf/es/elasticsearch.yml << EOF
+# Create custom Elasticsearch config if it doesn't exist
+if [ ! -f "/opt/sonarqube/temp/conf/es/elasticsearch.yml" ]; then
+  echo "📝 Creating Elasticsearch configuration..."
+  cat > /opt/sonarqube/temp/conf/es/elasticsearch.yml << EOF
 # Railway-specific Elasticsearch configuration
 node.name: sonarqube
 cluster.name: sonarqube
@@ -28,11 +29,11 @@ http.host: 127.0.0.1
 xpack.security.enabled: false
 action.auto_create_index: false
 EOF
-chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml
+  chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml
+fi
 
 # Export critical variables for Elasticsearch
 export ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
-export SONAR_SEARCH_JAVAOPTS="-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
 
 # Database connection check
 if [ -n "${SONAR_JDBC_URL:-}" ]; then
@@ -67,7 +68,10 @@ echo "ES_JAVA_OPTS: ${ES_JAVA_OPTS:-Not set}"
 echo "🔍 Elasticsearch configuration:"
 cat /opt/sonarqube/temp/conf/es/elasticsearch.yml
 
-# Start SonarQube with optimized settings
+# Add explicit paths to the JAVA_OPTS
+export JAVA_OPTS="${JAVA_OPTS} -Dsonar.path.data=/opt/sonarqube/data -Dsonar.path.logs=/opt/sonarqube/logs -Dsonar.path.temp=/opt/sonarqube/temp"
+
+# Start SonarQube with Railway-specific settings
 echo "🚀 Launching SonarQube with Railway-specific settings..."
 exec java \
     -Djava.security.egd=file:/dev/./urandom \
@@ -75,7 +79,7 @@ exec java \
     ${JAVA_OPTS} \
     -Dsonar.web.port=${PORT:-9000} \
     -Dsonar.web.host=${SONAR_WEB_HOST:-0.0.0.0} \
-    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS}" \
+    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS:-'-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false'}" \
     -Dsonar.web.javaOpts="${SONAR_WEB_JAVAOPTS:-'-Xmx512m -Xms256m -XX:+UseSerialGC'}" \
     -Dsonar.ce.javaOpts="${SONAR_CE_JAVAOPTS:-'-Xmx512m -Xms256m -XX:+UseSerialGC'}" \
     -Dsonar.telemetry.enable=${SONAR_TELEMETRY_ENABLE:-false} \
@@ -84,7 +88,4 @@ exec java \
     -Dsonar.ce.workerCount=4 \
     -Dsonar.cluster.enabled=false \
     -Dsonar.es.bootstrap.checks.disable=${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE:-true} \
-    -Dsonar.path.data=/opt/sonarqube/data \
-    -Dsonar.path.logs=/opt/sonarqube/logs \
-    -Dsonar.path.temp=/opt/sonarqube/temp \
     -jar "$SONAR_APP_JAR"
