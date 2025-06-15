@@ -47,9 +47,9 @@ RUN { \
         echo "sonar.security.hotspots.inheritFromParent=true"; \
         echo "sonar.qualitygate.wait=true"; \
         echo "# Performance tuning optimized for Railway and containers"; \
-        echo "sonar.web.javaOpts=-Xmx1024m -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"; \
-        echo "sonar.ce.javaOpts=-Xmx768m -Xms256m -XX:+UseG1GC"; \
-        echo "sonar.search.javaOpts=-Xmx1024m -Xms1024m -XX:+UseG1GC"; \
+        echo "sonar.web.javaOpts=-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"; \
+        echo "sonar.ce.javaOpts=-Xmx2g -Xms512m -XX:+UseG1GC"; \
+        echo "sonar.search.javaOpts=-Xmx1g -Xms1g -XX:+UseG1GC"; \
         echo "# Railway compatibility"; \
         echo "sonar.web.host=0.0.0.0"; \
         echo "sonar.web.port=\${PORT:-9000}"; \
@@ -71,6 +71,11 @@ RUN { \
         echo "sonar.plugins.downloadOnlyRequired=false"; \
         echo "# Plugin configuration"; \
         echo "sonar.web.javaAdditionalOpts=-Duser.timezone=UTC"; \
+        echo "# Railway-specific settings"; \
+        echo "sonar.web.gracefulStopTimeoutInMs=60000"; \
+        echo "sonar.process.gracefulStopTimeout=60"; \
+        echo "sonar.cluster.enabled=false"; \
+        echo "sonar.search.initialStateTimeout=120"; \
     } >> "${SONARQUBE_HOME}/conf/sonar.properties";
 
 # Download and install official SonarQube report plugins
@@ -136,8 +141,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
 USER sonarqube
 
 # Environment variables optimized for Railway and containers
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
+ENV SONAR_SEARCH_JAVAADDITIONALOPTS="-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m"
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport"
 
 # Railway compatibility flags
@@ -147,6 +153,10 @@ ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 
 # Expose default port
 EXPOSE 9000
+
+# Copy Railway-specific startup script
+COPY --chown=sonarqube:root start-railway.sh /opt/sonarqube/bin/start-railway.sh
+RUN chmod +x /opt/sonarqube/bin/start-railway.sh
 
 # Use the optimized entrypoint
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
