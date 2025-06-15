@@ -47,7 +47,7 @@ RUN chmod +x /usr/local/bin/start-railway.sh
 # Custom configuration
 RUN echo "sonar.web.host=0.0.0.0" > /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.web.port=9000" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.search.javaOpts=-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false" >> /opt/sonarqube/conf/sonar.properties && \
+    echo "sonar.search.javaOpts=-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.ce.javaOpts=-Xmx1g -Xms512m" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.web.javaOpts=-Xmx1g -Xms512m" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.telemetry.enable=false" >> /opt/sonarqube/conf/sonar.properties && \
@@ -57,7 +57,7 @@ RUN echo "sonar.web.host=0.0.0.0" > /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.path.temp=/opt/sonarqube/temp" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.search.httpPort=9001" >> /opt/sonarqube/conf/sonar.properties && \
     echo "sonar.ce.workerCount=4" >> /opt/sonarqube/conf/sonar.properties && \
-    echo "sonar.search.javaAdditionalOpts=-Des.bootstrap.checks=false -Des.bootstrap.system_call_filter=false" >> /opt/sonarqube/conf/sonar.properties
+    echo "sonar.search.javaAdditionalOpts=-Des.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false" >> /opt/sonarqube/conf/sonar.properties
 
 # Create Elasticsearch configuration directory and file
 RUN mkdir -p /opt/sonarqube/temp/conf/es && \
@@ -72,6 +72,7 @@ RUN mkdir -p /opt/sonarqube/temp/conf/es && \
     echo "http.host: 127.0.0.1" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
     echo "xpack.security.enabled: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
     echo "action.auto_create_index: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
+    echo "node.store.allow_mmap: false" >> /opt/sonarqube/temp/conf/es/elasticsearch.yml && \
     chmod -R 777 /opt/sonarqube/temp/conf/es
 
 # Default environment variables matching Railway configuration from railway.toml
@@ -87,9 +88,9 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ENV SONAR_WEB_JAVAOPTS="-Xmx1g -Xms512m"
 ENV SONAR_CE_JAVAOPTS="-Xmx1g -Xms512m"
-ENV SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
-ENV ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
-ENV SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+ENV SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+ENV ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+ENV SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
 # Expose web port
 EXPOSE 9000

@@ -28,12 +28,14 @@ transport.host: 127.0.0.1
 http.host: 127.0.0.1
 xpack.security.enabled: false
 action.auto_create_index: false
+node.store.allow_mmap: false
+bootstrap.memory_lock: false
 EOF
   chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml
 fi
 
 # Export critical variables for Elasticsearch - removed GC settings to avoid conflicts
-export ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 # Prevent GC conflicts by using only memory percentage
 export JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 
@@ -81,8 +83,8 @@ exec java \
     ${JAVA_OPTS} \
     -Dsonar.web.port=${PORT:-9000} \
     -Dsonar.web.host=${SONAR_WEB_HOST:-0.0.0.0} \
-    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS:-'-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false'}" \
-    -Dsonar.search.javaAdditionalOpts="-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false" \
+    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS:-'-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false'}" \
+    -Dsonar.search.javaAdditionalOpts="-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false" \
     -Dsonar.web.javaOpts="${SONAR_WEB_JAVAOPTS:-'-Xmx1g -Xms512m'}" \
     -Dsonar.ce.javaOpts="${SONAR_CE_JAVAOPTS:-'-Xmx1g -Xms512m'}" \
     -Dsonar.telemetry.enable=${SONAR_TELEMETRY_ENABLE:-false} \

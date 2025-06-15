@@ -46,6 +46,14 @@ Multiple garbage collectors selected
 
 Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de basura que entraba en conflicto con el UseSerialGC especificado en otras configuraciones.
 
+### Problema con Elasticsearch (15/06/2025)
+Después de resolver el problema de los recolectores de basura, surgió un nuevo error con Elasticsearch:
+```
+ERROR: Elasticsearch died while starting up, with exit code 1
+```
+
+Este error ocurre porque Elasticsearch está intentando utilizar mmap para asignar memoria, lo cual puede estar restringido en entornos containerizados como Railway.
+
 ## Soluciones Implementadas
 
 ### Solución original
@@ -124,6 +132,18 @@ Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de 
 - Simplificado las variables de entorno para evitar opciones duplicadas o conflictivas
 - Mantenido configuraciones explícitas solo para la memoria y las propiedades de Elasticsearch
 
+### Solución para problemas de Elasticsearch (15/06/2025)
+
+#### 1. Configuración de memoria virtual
+- Añadido `node.store.allow_mmap: false` en elasticsearch.yml para deshabilitar el uso de mmap
+- Añadido `bootstrap.memory_lock: false` para evitar problemas con el bloqueo de memoria
+- Añadido `-Des.node.store.allow_mmap=false` a todas las variables de entorno relacionadas con Elasticsearch
+
+#### 2. Propagación de configuración
+- Actualizado todos los archivos de configuración (Dockerfile, railway.toml, start-railway.sh)
+- Asegurado que las propiedades críticas se aplican en todos los puntos de configuración
+- Mantenido configuración coherente entre sonar.properties y variables de entorno
+
 ## Beneficios de las Soluciones
 
 ### Beneficios de la solución original
@@ -149,6 +169,12 @@ Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de 
 3. **Adaptabilidad**: Permitir que la JVM seleccione la mejor estrategia de GC
 4. **Mantenibilidad**: Reducción de la complejidad en la configuración
 
+### Beneficios de la solución para Elasticsearch
+1. **Compatibilidad con contenedores**: Optimización para entornos con restricciones de memoria
+2. **Estabilidad mejorada**: Eliminación de errores de arranque de Elasticsearch
+3. **Configuración robusta**: Aplicación consistente de parámetros críticos
+4. **Rendimiento optimizado**: Ajuste fino de las configuraciones de almacenamiento y memoria
+
 ## Resultado Esperado
 
 Estas soluciones optimizadas deberían resolver completamente los errores en Railway al:
@@ -160,5 +186,6 @@ Estas soluciones optimizadas deberían resolver completamente los errores en Rai
 5. Asegurar que Elasticsearch reciba suficiente memoria para operar correctamente
 6. Corregir configuraciones contradictorias que causaban conflictos en las variables de entorno
 7. Eliminar conflictos entre múltiples recolectores de basura que impedían el arranque de la JVM
+8. Configurar Elasticsearch para funcionar correctamente en entornos contenedorizados deshabilitando mmap
 
 La aplicación ahora debería construirse, desplegarse y funcionar correctamente en Railway sin errores.

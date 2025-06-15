@@ -15,8 +15,8 @@ startupTimeout = 1800
 [env]
 # Elasticsearch bootstrap configuration
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
-SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+ES_JAVA_OPTS = "-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
 # Java optimization - removed GC settings to avoid conflicts
 JAVA_OPTS = "-XX:MaxRAMPercentage=75.0"
