@@ -61,21 +61,8 @@ else
     echo "❌ CNES Report Plugin not found!"
 fi
 
-# Update sonar.properties with Railway settings
-echo "📝 Updating sonar.properties..."
-{
-    echo ""
-    echo "# Railway-specific settings"
-    echo "sonar.web.port=${PORT:-8080}"
-    echo "sonar.web.host=0.0.0.0"
-    echo "# Elasticsearch memory settings - CRITICAL FIX"
-    echo "sonar.search.javaOpts=-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
-    echo "sonar.search.javaAdditionalOpts=-XX:+UseG1GC"
-    echo "# Database settings"
-    echo "sonar.jdbc.url=${SONAR_JDBC_URL:-}"
-    echo "sonar.jdbc.username=${SONAR_JDBC_USERNAME:-}"
-    echo "sonar.jdbc.password=${SONAR_JDBC_PASSWORD:-}"
-} >> /opt/sonarqube/conf/sonar.properties
+# Configuration applied via system properties (no file modification needed)
+echo "📝 Configuration will be applied via system properties..."
 
 # Start SonarQube directly with JAR
 echo "🚀 Launching SonarQube..."
