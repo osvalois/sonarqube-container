@@ -1,0 +1,67 @@
+# Use official SonarQube image - Railway optimized with minimal changes
+FROM sonarqube:9.9-community
+
+# Metadata
+LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
+LABEL description="Ultra Simple SonarQube for Railway - Minimal modifications"
+
+# Switch to root for installation
+USER root
+
+# Install only essential tools for diagnostics
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Adjust permissions for directories that might need writing
+RUN mkdir -p /opt/sonarqube/extensions/plugins /tmp/sonarqube && \
+    chmod -R 777 /opt/sonarqube/extensions/plugins /tmp/sonarqube && \
+    chown -R sonarqube:sonarqube /opt/sonarqube/extensions/plugins /tmp/sonarqube
+
+# Download plugin to a writable directory
+WORKDIR /tmp/sonarqube
+RUN curl -L -o sonar-cnes-report.jar \
+    "https://github.com/cnescatlab/sonar-cnes-report/releases/download/4.2.0/sonar-cnes-report-4.2.0.jar"
+
+# Create a simple entrypoint script with proper diagnostic
+RUN echo '#!/bin/bash' > /usr/local/bin/railway-entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "🚀 Starting Railway SonarQube with minimal configuration..."' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Copy plugins if present' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'if [ -f "/tmp/sonarqube/sonar-cnes-report.jar" ]; then' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '    echo "📦 Installing CNES Report plugin..."' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '    cp -f /tmp/sonarqube/sonar-cnes-report.jar /opt/sonarqube/extensions/plugins/' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Set essential environment variables' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_JDBC_URL=${SONAR_JDBC_URL}' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_JDBC_USERNAME=${SONAR_JDBC_USERNAME}' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_JDBC_PASSWORD=${SONAR_JDBC_PASSWORD}' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_WEB_PORT=${PORT:-9000}' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_WEB_HOST=0.0.0.0' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Export essential JVM options for ES bootstrap and VM limits' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'export SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Log diagnostic info' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "🔍 Configuration:"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "  - Web port: ${SONAR_WEB_PORT}"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "  - Database: ${SONAR_JDBC_URL}"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "  - Elasticsearch options: ${ES_JAVA_OPTS}"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Run the original entrypoint' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "📢 Starting SonarQube with original entrypoint..."' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'exec /opt/sonarqube/bin/run.sh "$@"' >> /usr/local/bin/railway-entrypoint.sh && \
+    chmod +x /usr/local/bin/railway-entrypoint.sh
+
+# Expose the web port
+EXPOSE 9000
+
+# Use our custom entrypoint
+ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
+CMD []
