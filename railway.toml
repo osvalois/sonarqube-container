@@ -4,10 +4,16 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/api/system/status"
-healthcheckTimeout = 300
-restartPolicyType = "never"
+healthcheckTimeout = 600
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
 
 [env]
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
 RUN_AS_ROOT = "true"
 JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+SONAR_WEB_JAVAOPTS = "-Xmx2g -Xms1g -XX:+UseG1GC"
+SONAR_CE_JAVAOPTS = "-Xmx2g -Xms512m -XX:+UseG1GC"
+SONAR_SEARCH_JAVAOPTS = "-Xmx1g -Xms1g"
+SONAR_TELEMETRY_ENABLE = "false"
+SONAR_UPDATECENTER_ACTIVATE = "false"
