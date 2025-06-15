@@ -64,6 +64,9 @@ fi
 # Configuration applied via system properties (no file modification needed)
 echo "📝 Configuration will be applied via system properties..."
 
+# We won't try to update sonar.properties directly, as it causes permission errors
+# Instead, we'll use system properties through Java command line
+
 # Start SonarQube directly with JAR
 echo "🚀 Launching SonarQube..."
 exec java \

@@ -27,7 +27,13 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 # Change ownership of required directories to sonarqube user
-chown -R sonarqube:sonarqube "$SQ_DATA_DIR" "$SQ_EXTENSIONS_DIR" "$SQ_LOGS_DIR" "$SQ_TEMP_DIR"
+# Check if we're running as root and not in Railway mode
+if [ "$(id -u)" = "0" ] && [ "${RUN_AS_ROOT}" != "true" ]; then
+    echo "Setting directory permissions for sonarqube user..."
+    chown -R sonarqube:sonarqube "$SQ_DATA_DIR" "$SQ_EXTENSIONS_DIR" "$SQ_LOGS_DIR" "$SQ_TEMP_DIR"
+else
+    echo "Running with current user permissions..."
+fi
 
 DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
 
