@@ -54,9 +54,9 @@ RUN echo '#!/bin/bash' > /usr/local/bin/railway-entrypoint.sh && \
     echo 'echo "  - Database: ${SONAR_JDBC_URL}"' >> /usr/local/bin/railway-entrypoint.sh && \
     echo 'echo "  - Elasticsearch options: ${ES_JAVA_OPTS}"' >> /usr/local/bin/railway-entrypoint.sh && \
     echo '' >> /usr/local/bin/railway-entrypoint.sh && \
-    echo '# Run the original entrypoint' >> /usr/local/bin/railway-entrypoint.sh && \
-    echo 'echo "📢 Starting SonarQube with original entrypoint..."' >> /usr/local/bin/railway-entrypoint.sh && \
-    echo 'exec /opt/sonarqube/bin/run.sh "$@"' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo '# Run SonarQube' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'echo "📢 Starting SonarQube..."' >> /usr/local/bin/railway-entrypoint.sh && \
+    echo 'cd /opt/sonarqube && exec /opt/sonarqube/bin/linux-x86-64/sonar.sh start "$@" && tail -f /opt/sonarqube/logs/sonar.log' >> /usr/local/bin/railway-entrypoint.sh && \
     chmod +x /usr/local/bin/railway-entrypoint.sh
 
 # Expose the web port

@@ -2,83 +2,97 @@
 
 ## Diagnóstico del Problema
 
-Tras analizar los logs de error de Elasticsearch en Railway, hemos identificado los siguientes problemas críticos:
+Tras analizar los logs de error de Railway, hemos identificado los siguientes problemas críticos:
 
-1. **Error de arranque en Elasticsearch**:
+1. **Error de script de arranque**:
    ```
-   ERROR: Elasticsearch died while starting up, with exit code 1
-   ```
-
-2. **Conflicto de configuración de JVM**:
-   ```
-   WARN app[][] JAVA_TOOL_OPTIONS is defined but will be ignored
+   /usr/local/bin/railway-entrypoint.sh: line 31: /opt/sonarqube/bin/run.sh: No such file or directory
    ```
 
-3. **Problemas de permisos** en directorios protegidos del contenedor
+2. **Conflicto de rutas**: El script intenta ejecutar un archivo `run.sh` que no existe en esa ubicación en la imagen oficial de SonarQube 9.9-community.
 
-## Solución Radical Implementada
+3. **Reintentos fallidos**: El contenedor se reinicia repetidamente debido al mismo error.
 
-Hemos optado por una solución minimalista que elimina la complejidad innecesaria:
+## Solución Implementada
 
-### 1. Creación de un Dockerfile Ultra Simple
+### 1. Corrección de la ruta al script de inicio
 
-- Utilizamos una versión específica y estable de SonarQube (9.9-community)
-- Realizamos solo los cambios absolutamente necesarios:
-  - Instalación mínima de dependencias
-  - Configuración de permisos en directorios críticos
-  - Descarga del plugin CNES en una ubicación con permisos adecuados
-  - Script de entrypoint simplificado que usa la configuración base de SonarQube
+Hemos modificado el Dockerfile.ultra.simple para usar la ruta correcta al script de inicio:
 
-### 2. Configuración específica para Elasticsearch
+```diff
+- echo '# Run the original entrypoint' >> /usr/local/bin/railway-entrypoint.sh
+- echo 'echo "📢 Starting SonarQube with original entrypoint..."' >> /usr/local/bin/railway-entrypoint.sh
+- echo 'exec /opt/sonarqube/bin/run.sh "$@"' >> /usr/local/bin/railway-entrypoint.sh
++ echo '# Run SonarQube' >> /usr/local/bin/railway-entrypoint.sh
++ echo 'echo "📢 Starting SonarQube..."' >> /usr/local/bin/railway-entrypoint.sh
++ echo 'cd /opt/sonarqube && exec /opt/sonarqube/bin/linux-x86-64/sonar.sh start "$@" && tail -f /opt/sonarqube/logs/sonar.log' >> /usr/local/bin/railway-entrypoint.sh
+```
 
-- Uso de `ES_JAVA_OPTS` con configuración mínima de memoria:
-  ```
-  -Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false
-  ```
-- Configuración explícita para deshabilitar las comprobaciones de bootstrap:
-  ```
-  SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false"
-  ```
-- Reducción significativa de memoria asignada para evitar OOM kills
+Esta modificación:
+- Cambia al directorio `/opt/sonarqube` antes de ejecutar el script
+- Usa la ruta correcta al script de inicio (`bin/linux-x86-64/sonar.sh`)
+- Usa el comando `start` para iniciar SonarQube como un servicio
+- Mantiene el contenedor en ejecución con `tail -f` para monitorear los logs
 
-### 3. Ajustes de JVM optimizados para Railway
+### 2. Mejora de configuración de Railway
 
-- Configuración conservadora de memoria para todos los componentes:
-  ```
-  SONAR_WEB_JAVAOPTS="-Xmx512m -Xms256m -XX:+UseSerialGC"
-  SONAR_CE_JAVAOPTS="-Xmx512m -Xms256m -XX:+UseSerialGC"
-  SONAR_SEARCH_JAVAOPTS="-Xmx512m -Xms256m"
-  ```
-- Uso de GC serial para reducir el consumo de recursos
-- Configuración del porcentaje máximo de RAM a 65% para dejar margen de seguridad
+Actualizado el archivo `railway.toml` para proporcionar tiempo suficiente para el inicio:
 
-### 4. Diagnóstico mejorado
+```diff
+[deploy]
+healthcheckPath = "/api/system/status"
+- healthcheckTimeout = 1200
+- healthcheckInterval = 60
++ healthcheckTimeout = 1800
++ healthcheckInterval = 90
+restartPolicyType = "ON_FAILURE"
+- restartPolicyMaxRetries = 5
++ restartPolicyMaxRetries = 10
+numReplicas = 1
+rootDirectory = "."
+- startupTimeout = 1200
++ startupTimeout = 1800
+```
 
-- Script de entrypoint con más información de diagnóstico
-- Visualización de la configuración aplicada al iniciar
-- Manejo adecuado de errores y reintentos
+Estos cambios:
+- Aumentan el tiempo de espera del health check a 1800 segundos (30 minutos)
+- Incrementan el intervalo entre verificaciones a 90 segundos
+- Aumentan el número máximo de reintentos a 10
+- Extienden el tiempo de inicio a 1800 segundos
 
-### 5. Mejoras en railway.toml
+### 3. Mantenimiento de la configuración para Elasticsearch
 
-- Tiempos de espera aumentados para permitir un arranque completo
-- Intervalos de healthcheck optimizados
-- Organización clara de variables de entorno por categorías
+Hemos conservado la configuración optimizada para Elasticsearch:
+
+```
+ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:+UseSerialGC -Des.enforce.bootstrap.checks=false"
+SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false"
+```
+
+### 4. Configuración de JVM optimizada para Railway
+
+Mantenemos la configuración conservadora de memoria para todos los componentes:
+
+```
+SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
+SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m -XX:+UseSerialGC"
+SONAR_SEARCH_JAVAOPTS = "-Xmx512m -Xms256m"
+```
 
 ## Cambios Clave vs. Solución Anterior
 
-1. **Simplificación radical**: Dockerfile de menos de 50 líneas vs 100+ anteriormente
-2. **Uso de la imagen base**: Aprovechamos la configuración de la imagen oficial
-3. **GC Serial**: Cambiamos de G1GC a Serial GC para optimizar memoria
-4. **Configuración explícita de ES**: Configuración específica para Elasticsearch
-5. **Eliminación de scripts complejos**: Confiamos en el script de arranque original
+1. **Corrección de ruta**: Identificamos y corregimos la ruta incorrecta al script de inicio
+2. **Mejora de estabilidad**: Mantener el contenedor en ejecución con tail -f para evitar salidas prematuras
+3. **Tiempos de espera ampliados**: Mayor tolerancia para el inicio completo de la aplicación
+4. **Mayor número de reintentos**: Más oportunidades de iniciar correctamente en caso de fallos temporales
 
 ## Resultados Esperados
 
-Esta solución ultra simple debería resolver todos los problemas encontrados anteriormente:
+Con estas modificaciones, la aplicación SonarQube debería:
 
-1. Elasticsearch debería arrancar correctamente con las configuraciones específicas
-2. El consumo de memoria estará controlado, evitando OOM kills
-3. La aplicación iniciará dentro de los tiempos de espera configurados
-4. Los healthchecks detectarán correctamente cuando la aplicación esté disponible
+1. Iniciar correctamente sin errores de "archivo no encontrado"
+2. Tener tiempo suficiente para completar el arranque de todos sus componentes
+3. Pasar correctamente el health check de Railway
+4. Funcionar de manera estable en el entorno de Railway
 
-La clave de esta solución es confiar en la configuración base de SonarQube y solo ajustar los parámetros críticos para Railway, en lugar de intentar reconfigurar completamente la aplicación.
+La URL de la aplicación `sonarqube-container-production-a7e6.up.railway.app` ahora debería mostrar la interfaz de SonarQube correctamente, permitiendo la utilización completa de todas sus funcionalidades.
