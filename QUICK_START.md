@@ -99,22 +99,44 @@ To add plugins later, you can:
 ### Elasticsearch Bootstrap Check Failed (vm.max_map_count)
 If you see this error: `max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]`
 
-```bash
-# For Linux (permanent fix):
-sudo sysctl -w vm.max_map_count=262144
-echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+This error occurs because Elasticsearch (used by SonarQube) requires a minimum number of memory-mapped areas to function properly.
 
-# For macOS (temporary fix for Docker Desktop):
+#### 1. Temporary Fix (until host restart)
+
+```bash
+# For Linux:
+sudo sysctl -w vm.max_map_count=262144
+
+# For macOS (Docker Desktop):
 docker run --rm --privileged alpine sysctl -w vm.max_map_count=262144
 
 # For Windows (WSL-based Docker Desktop):
 wsl -d docker-desktop -e sysctl -w vm.max_map_count=262144
+```
 
-# Then restart the services:
+#### 2. Permanent Fix
+
+```bash
+# For Linux - edit sysctl.conf:
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+# For Windows (WSL-based Docker Desktop):
+wsl -d docker-desktop -e sh -c "echo 'vm.max_map_count=262144' >> /etc/sysctl.conf"
+```
+
+#### 3. Restart SonarQube
+
+```bash
 docker-compose down && docker-compose up -d
 ```
 
-See [DOCKER_HOST_REQUIREMENTS.md](DOCKER_HOST_REQUIREMENTS.md) for detailed instructions.
+⚠️ **Important Notes**:
+- You must set this on the **host system**, not inside the container
+- For multi-node environments, set this on **every host**
+- Avoid using `-Dsonar.es.bootstrap.checks.disable=true` as it's not recommended for production
+
+See [DOCKER_HOST_REQUIREMENTS.md](DOCKER_HOST_REQUIREMENTS.md) for complete instructions.
 
 ### Port Already in Use
 ```bash
