@@ -1,0 +1,20 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.railway"
+
+[deploy]
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "sonarqube"
+port = 9000
+
+[services.healthcheck]
+path = "/api/system/status"
+timeout = 300
+
+[[services.envVars]]
+SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
+RUN_AS_ROOT = "true"
+JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
