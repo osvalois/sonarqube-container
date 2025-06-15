@@ -67,6 +67,15 @@ echo "📝 Configuration will be applied via system properties..."
 # We won't try to update sonar.properties directly, as it causes permission errors
 # Instead, we'll use system properties through Java command line
 
+# Apply configuration from our pre-created properties file
+if [ -f "/usr/local/bin/sonar-config.properties" ]; then
+    echo "🔧 Using pre-created configuration file..."
+    CONFIG_PROPS=$(cat /usr/local/bin/sonar-config.properties | grep -v "^#" | tr '\n' ' ' | sed 's/=/=/g')
+else
+    echo "⚠️ No pre-created configuration file found. Using defaults."
+    CONFIG_PROPS=""
+fi
+
 # Start SonarQube directly with JAR
 echo "🚀 Launching SonarQube..."
 exec java \
@@ -76,6 +85,13 @@ exec java \
     -Dsonar.web.host=0.0.0.0 \
     -Dsonar.search.javaOpts="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m" \
     -Dsonar.search.javaAdditionalOpts="-XX:+UseG1GC" \
+    -Dsonar.telemetry.enable=false \
+    -Dsonar.log.level=INFO \
+    -Dsonar.forceAuthentication=false \
+    -Dsonar.web.javaOpts="-Xmx2g -Xms1g -XX:+UseG1GC" \
+    -Dsonar.ce.javaOpts="-Xmx1g -Xms512m -XX:+UseG1GC" \
+    -Dsonar.cluster.enabled=false \
+    -Dsonar.es.bootstrap.checks.disable=true \
     $SONAR_WEB_JAVAADDITIONALOPTS \
     $SONAR_CE_JAVAADDITIONALOPTS \
     -jar "$SONAR_APP_JAR"

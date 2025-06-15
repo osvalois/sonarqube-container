@@ -1,0 +1,102 @@
+# Use SonarQube Community Edition - Latest stable version
+# Simplified version for Railway deployment
+FROM sonarqube:community
+
+# Metadata
+LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
+LABEL description="SonarQube 2025 Latest optimized for Railway deployment - Simplified version"
+
+# Switch to root for installation
+USER root
+
+# Install dependencies with security updates
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        wget && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create necessary directories with proper permissions
+WORKDIR /usr/local/bin
+
+# Download and install CNES Report Plugin
+RUN mkdir -p /usr/local/share/sonarqube-plugins && \
+    wget -O /usr/local/share/sonarqube-plugins/sonar-cnes-report-plugin.jar \
+        "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar"
+
+# Create simplified Railway startup script
+RUN { \
+        echo '#!/bin/bash'; \
+        echo 'set -euo pipefail'; \
+        echo ''; \
+        echo 'echo "🚀 Starting SonarQube for Railway deployment..."'; \
+        echo 'echo "📍 Instance: divine-intuition"'; \
+        echo 'echo "🌐 Domain: sonarqube-container-production-a7e6.up.railway.app"'; \
+        echo 'echo "🔌 Port: ${PORT:-8080}"'; \
+        echo 'echo "💾 Memory: 8GB available"'; \
+        echo ''; \
+        echo '# Database connection check'; \
+        echo 'echo "🔄 Checking database connection..."'; \
+        echo 'if [ -n "${SONAR_JDBC_URL:-}" ]; then'; \
+        echo '    echo "✅ SONAR_JDBC_URL configured: ${SONAR_JDBC_URL}"'; \
+        echo 'else'; \
+        echo '    echo "⚠️  Using embedded H2 database (not recommended for production)"'; \
+        echo 'fi'; \
+        echo ''; \
+        echo '# Memory optimization'; \
+        echo 'echo "🧠 Optimizing memory settings..."'; \
+        echo ''; \
+        echo '# Find the sonar-application JAR dynamically'; \
+        echo 'SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)'; \
+        echo ''; \
+        echo 'if [ -z "$SONAR_APP_JAR" ]; then'; \
+        echo '    echo "❌ ERROR: Could not find sonar-application JAR file"'; \
+        echo '    exit 1'; \
+        echo 'fi'; \
+        echo ''; \
+        echo 'echo "📦 Found SonarQube JAR: $SONAR_APP_JAR"'; \
+        echo ''; \
+        echo '# Copy plugin if installed'; \
+        echo 'if [ -f "/usr/local/share/sonarqube-plugins/sonar-cnes-report-plugin.jar" ]; then'; \
+        echo '    echo "✅ Installing CNES Report Plugin..."'; \
+        echo '    cp -f /usr/local/share/sonarqube-plugins/sonar-cnes-report-plugin.jar /opt/sonarqube/extensions/plugins/ || true'; \
+        echo 'fi'; \
+        echo ''; \
+        echo '# Start SonarQube directly with JAR'; \
+        echo 'echo "🚀 Launching SonarQube..."'; \
+        echo 'exec java \\'; \
+        echo '    -Djava.security.egd=file:/dev/./urandom \\'; \
+        echo '    -Dfile.encoding=UTF-8 \\'; \
+        echo '    -Dsonar.web.port=${PORT:-8080} \\'; \
+        echo '    -Dsonar.web.host=0.0.0.0 \\'; \
+        echo '    -Dsonar.search.javaOpts="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m" \\'; \
+        echo '    -Dsonar.search.javaAdditionalOpts="-XX:+UseG1GC" \\'; \
+        echo '    -Dsonar.telemetry.enable=false \\'; \
+        echo '    -Dsonar.log.level=INFO \\'; \
+        echo '    -Dsonar.forceAuthentication=false \\'; \
+        echo '    -Dsonar.web.javaOpts="-Xmx2g -Xms1g -XX:+UseG1GC" \\'; \
+        echo '    -Dsonar.ce.javaOpts="-Xmx1g -Xms512m -XX:+UseG1GC" \\'; \
+        echo '    -Dsonar.cluster.enabled=false \\'; \
+        echo '    -Dsonar.es.bootstrap.checks.disable=true \\'; \
+        echo '    -jar "$SONAR_APP_JAR"'; \
+    } > /usr/local/bin/railway-entrypoint.sh && \
+    chmod +x /usr/local/bin/railway-entrypoint.sh
+
+# Environment variables for Railway
+ENV RUN_AS_ROOT=true
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+ENV SONAR_TELEMETRY_ENABLE=false
+ENV SONAR_WEB_PORT=8080
+ENV PORT=8080
+ENV SONAR_WEB_HOST=0.0.0.0
+ENV SONAR_SEARCH_JAVA_OPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
+ENV SONAR_CE_JAVA_OPTS="-Xmx1g -Xms512m -XX:+UseG1GC"
+ENV SONAR_WEB_JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC"
+
+# Expose default port
+EXPOSE 8080
+
+# Use simplified entrypoint
+ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]

@@ -40,7 +40,7 @@ RUN set -eux; \
     chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins" \
                     "${SONARQUBE_HOME}/reports";
 
-# Add custom configuration for SonarQube 2025 (Railway-compatible)
+# Create configuration file in a writable location
 RUN { \
         echo "# Enhanced Security and Compliance Settings for SonarQube 2025 Latest"; \
         echo "sonar.pdf.report.enabled=true"; \
@@ -76,7 +76,7 @@ RUN { \
         echo "sonar.process.gracefulStopTimeout=60"; \
         echo "sonar.cluster.enabled=false"; \
         echo "sonar.search.initialStateTimeout=120"; \
-    } >> "${SONARQUBE_HOME}/conf/sonar.properties";
+    } > /usr/local/bin/sonar-config.properties;
 
 # Download and install official SonarQube report plugins
 RUN set -eux; \
