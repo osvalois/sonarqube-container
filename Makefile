@@ -108,6 +108,19 @@ info:
 		echo "  - $(LATEST_TAG) (latest)"; \
 	fi
 
+# Host system requirements check
+check-host-requirements:
+	@echo "Checking host system requirements for SonarQube/Elasticsearch..."
+	@echo "Current vm.max_map_count:"
+	@sysctl vm.max_map_count || echo "Failed to check vm.max_map_count"
+	@echo ""
+	@echo "To fix vm.max_map_count issues, run:"
+	@echo "  sudo bash scripts/check-elasticsearch-requirements.sh"
+	@echo ""
+	@echo "Or run the following command:"
+	@echo "  sudo sysctl -w vm.max_map_count=262144"
+	@echo "  echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf"
+
 # Ayuda
 help:
 	@echo "Comandos disponibles:"
@@ -122,10 +135,11 @@ help:
 	@echo "  security-scan - Ejecutar análisis de seguridad con Trivy"
 	@echo "  clean         - Eliminar las imágenes locales"
 	@echo "  info          - Mostrar información de build y versionado"
+	@echo "  check-host-requirements - Verificar requisitos del host para Elasticsearch"
 	@echo "  help          - Mostrar esta ayuda"
 	@echo ""
 	@echo "Ejemplo de uso:"
 	@echo "  make build    # Construye con sha-$(GIT_SHA_SHORT)"
 	@echo "  make publish  # Publica con todas las tags"
 
-.PHONY: build build-version publish run run-standalone stop logs status security-scan clean help
+.PHONY: build build-version publish run run-standalone stop logs status security-scan clean check-host-requirements help

@@ -1,0 +1,106 @@
+# Example Kubernetes init container for setting vm.max_map_count
+# This can be included in your SonarQube deployment to ensure proper Elasticsearch operation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  labels:
+    app: sonarqube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      # This init container sets vm.max_map_count for Elasticsearch
+      initContainers:
+        - name: init-sysctl
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true # Required to modify kernel parameters
+            runAsUser: 0     # Run as root
+          command:
+            - sh
+            - -c
+            - |
+              # Check current vm.max_map_count
+              current=$(sysctl -n vm.max_map_count)
+              echo "Current vm.max_map_count: $current"
+              
+              # Set it to required value if too low
+              if [ "$current" -lt 262144 ]; then
+                echo "Setting vm.max_map_count to 262144"
+                sysctl -w vm.max_map_count=262144
+                echo "New vm.max_map_count: $(sysctl -n vm.max_map_count)"
+              else
+                echo "vm.max_map_count already sufficient"
+              fi
+      containers:
+        - name: sonarqube
+          image: ${DOCKER_IMAGE}:${TAG}
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SONAR_JDBC_URL
+              value: jdbc:postgresql://postgres:5432/sonar
+            - name: SONAR_JDBC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: sonarqube-db-credentials
+                  key: username
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sonarqube-db-credentials
+                  key: password
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          volumeMounts:
+            - name: sonarqube-data
+              mountPath: /opt/sonarqube/data
+            - name: sonarqube-extensions
+              mountPath: /opt/sonarqube/extensions
+            - name: sonarqube-logs
+              mountPath: /opt/sonarqube/logs
+            - name: sonarqube-temp
+              mountPath: /opt/sonarqube/temp
+      volumes:
+        - name: sonarqube-data
+          persistentVolumeClaim:
+            claimName: sonarqube-data
+        - name: sonarqube-extensions
+          persistentVolumeClaim:
+            claimName: sonarqube-extensions
+        - name: sonarqube-logs
+          persistentVolumeClaim:
+            claimName: sonarqube-logs
+        - name: sonarqube-temp
+          persistentVolumeClaim:
+            claimName: sonarqube-temp
+
+# Note: This is a simplified example. For production use:
+# 1. Create appropriate PersistentVolumeClaims for data persistence
+# 2. Set up a ServiceAccount with appropriate permissions
+# 3. Add network policies, resource limits, and other security considerations

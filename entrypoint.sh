@@ -3,13 +3,26 @@ set -e
 
 # Try to increase vm.max_map_count if running with appropriate privileges
 if [ "$(id -u)" = "0" ]; then
-    echo "Attempting to set vm.max_map_count to 262144..."
-    if sysctl -w vm.max_map_count=262144 2>/dev/null; then
-        echo "Successfully set vm.max_map_count to 262144"
+    echo "Checking vm.max_map_count setting..."
+    CURRENT_MAP_COUNT=$(sysctl -n vm.max_map_count 2>/dev/null || echo "unknown")
+    
+    if [ "$CURRENT_MAP_COUNT" = "unknown" ]; then
+        echo "WARNING: Could not check vm.max_map_count value."
+    elif [ "$CURRENT_MAP_COUNT" -lt 262144 ]; then
+        echo "Current vm.max_map_count is $CURRENT_MAP_COUNT (too low for Elasticsearch)"
+        echo "Attempting to set vm.max_map_count to 262144..."
+        
+        if sysctl -w vm.max_map_count=262144 2>/dev/null; then
+            echo "Successfully set vm.max_map_count to 262144"
+        else
+            echo "WARNING: Could not set vm.max_map_count. Elasticsearch bootstrap may fail."
+            echo "         To fix this issue:"
+            echo "         1. Run 'sudo sysctl -w vm.max_map_count=262144' on the Docker host"
+            echo "         2. Add 'vm.max_map_count=262144' to /etc/sysctl.conf for persistence"
+            echo "         See DOCKER_HOST_REQUIREMENTS.md for detailed instructions"
+        fi
     else
-        echo "WARNING: Could not set vm.max_map_count. If you encounter Elasticsearch bootstrap errors,"
-        echo "         please ensure vm.max_map_count=262144 is set on the Docker host."
-        echo "         See DOCKER_HOST_REQUIREMENTS.md for more information."
+        echo "vm.max_map_count is already set to $CURRENT_MAP_COUNT (sufficient for Elasticsearch)"
     fi
 fi
 
