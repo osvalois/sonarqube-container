@@ -78,9 +78,8 @@ RUN set -eux; \
     # Install CNES Report Plugin (latest version supporting SonarQube 10.x)
     wget -O "${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-plugin.jar" \
         "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar"; \
-    # Install SonarQube PDF Report Plugin
-    wget -O "${SONARQUBE_HOME}/extensions/plugins/sonar-pdf-report-plugin.jar" \
-        "https://github.com/SonarQubeCommunity/sonar-pdf-report/releases/download/4.0.1/sonar-pdf-report-4.0.1.jar"; \
+    # Verify download
+    ls -la "${SONARQUBE_HOME}/extensions/plugins/"; \
     # Set proper permissions
     chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins";
 

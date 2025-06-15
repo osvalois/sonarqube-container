@@ -1,10 +1,10 @@
-# SonarQube Official Report Plugins
+# SonarQube Official Report Plugin
 
-Este contenedor incluye dos plugins oficiales para la generación de reportes de análisis de SonarQube:
+Este contenedor incluye el plugin oficial CNES para la generación de reportes de análisis de SonarQube:
 
-## Plugins Instalados
+## Plugin Instalado
 
-### 1. CNES Report Plugin (v5.0.2)
+### CNES Report Plugin (v5.0.2)
 **Desarrollador**: CATLab (CNES)  
 **Repositorio**: https://github.com/cnescatlab/sonar-cnes-report  
 **Compatibilidad**: SonarQube 7.9.x - 25.1.x  
@@ -32,32 +32,13 @@ docker exec sonarqube-2025 java -jar /opt/sonarqube/extensions/plugins/sonar-cne
   -o /opt/sonarqube/reports/
 ```
 
-### 2. SonarQube PDF Report Plugin (v4.0.1)
-**Desarrollador**: SonarQube Community  
-**Repositorio**: https://github.com/SonarQubeCommunity/sonar-pdf-report  
-
-#### Características:
-- ✅ Generación automática de reportes **PDF**
-- ✅ Dos tipos de reporte: **Executive** y **Workbook**
-- ✅ Integración como post-job task
-- ✅ Dashboard, violaciones y hotspots incluidos
-- ✅ Métricas de reglas más violadas y clases complejas
-
-#### Configuración:
-El plugin se configura a nivel global o por proyecto en:
-**Administration** → **Configuration** → **PDF Report**
-
-#### Opciones disponibles:
-- **Skip report generation**: Omitir generación automática
-- **Report type**: Executive (resumen) o Workbook (completo)
-- **Username/Password**: Para proyectos seguros
-
 ## Formatos de Reporte Disponibles
 
 | Plugin | PDF | DOCX | XLSX | CSV | Markdown | TXT |
 |--------|-----|------|------|-----|----------|-----|
 | CNES Report | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| PDF Report | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**Nota**: Para reportes PDF en SonarQube Community Edition, necesitarás usar plugins comerciales como Bitegarden Report Plugin, ya que el plugin PDF oficial está deprecado.
 
 ## Acceso a Reportes Generados
 
@@ -93,7 +74,7 @@ services:
 ## Mejores Prácticas
 
 ### 1. Para reportes ejecutivos (stakeholders):
-- Usar **PDF Report Plugin** con tipo "Executive"
+- Usar **CNES Report Plugin** con formato DOCX
 - Formato limpio y profesional para presentaciones
 
 ### 2. Para análisis detallado (desarrolladores):
