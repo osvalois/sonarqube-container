@@ -1,5 +1,6 @@
 # Use SonarQube Community Edition - Latest stable version
 # Enhanced with AI Code Assurance, Advanced Security, and modern DevSecOps features
+# Optimized for both local development and Railway deployment
 FROM sonarqube:community
 
 # Build arguments for metadata
@@ -35,16 +36,19 @@ RUN set -eux; \
     mkdir -p "${SONARQUBE_HOME}/extensions/plugins"; \
     chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins";
 
-# Add custom configuration for SonarQube 2025
+# Add custom configuration for SonarQube 2025 (Railway-compatible)
 RUN { \
         echo "# Enhanced Security and Compliance Settings for SonarQube 2025 Latest"; \
         echo "sonar.pdf.report.enabled=true"; \
         echo "sonar.security.hotspots.inheritFromParent=true"; \
         echo "sonar.qualitygate.wait=true"; \
-        echo "# Performance tuning optimized for modern containers"; \
-        echo "sonar.web.javaOpts=-Xmx2048m -Xms1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"; \
-        echo "sonar.ce.javaOpts=-Xmx1536m -Xms512m -XX:+UseG1GC"; \
-        echo "sonar.search.javaOpts=-Xmx2048m -Xms2048m -XX:+UseG1GC"; \
+        echo "# Performance tuning optimized for Railway and containers"; \
+        echo "sonar.web.javaOpts=-Xmx1024m -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"; \
+        echo "sonar.ce.javaOpts=-Xmx768m -Xms256m -XX:+UseG1GC"; \
+        echo "sonar.search.javaOpts=-Xmx1024m -Xms1024m -XX:+UseG1GC"; \
+        echo "# Railway compatibility"; \
+        echo "sonar.web.host=0.0.0.0"; \
+        echo "sonar.web.port=\${PORT:-9000}"; \
         echo "# Modern SonarQube 2025 features with AI capabilities"; \
         echo "sonar.forceAuthentication=false"; \
         echo "sonar.log.level=INFO"; \
@@ -52,6 +56,9 @@ RUN { \
         echo "sonar.web.http.minThreads=5"; \
         echo "sonar.web.http.maxThreads=50"; \
         echo "sonar.web.http.acceptCount=25"; \
+        echo "# Disable problematic features for Railway"; \
+        echo "sonar.telemetry.enable=false"; \
+        echo "sonar.updatecenter.activate=false"; \
         echo "# Enable modern security analysis"; \
         echo "sonar.security.config.javasecurity=true"; \
         echo "sonar.security.config.pythonsecurity=true"; \
@@ -87,12 +94,15 @@ RUN { \
         printf "fi\n"; \
         printf "\n"; \
         printf "echo \"Starting SonarQube 2025 with: \$SONAR_APP_JAR\"\n"; \
-        printf "echo \"Container optimized for 2025 with enhanced security\"\n"; \
+        printf "echo \"Container optimized for 2025 with Railway support\"\n"; \
+        printf "echo \"Port: \${PORT:-9000}\"\n"; \
+        printf "echo \"Database: \${SONAR_JDBC_URL:-Not configured}\"\n"; \
         printf "\n"; \
-        printf "# Execute with proper Java options and modern flags\n"; \
+        printf "# Execute with Railway-compatible options\n"; \
         printf "exec java \\\\\n"; \
         printf "    -Djava.security.egd=file:/dev/./urandom \\\\\n"; \
         printf "    -Dfile.encoding=UTF-8 \\\\\n"; \
+        printf "    -Dsonar.web.port=\${PORT:-9000} \\\\\n"; \
         printf "    \${SONAR_WEB_JAVAADDITIONALOPTS} \\\\\n"; \
         printf "    \${SONAR_CE_JAVAADDITIONALOPTS} \\\\\n"; \
         printf "    -jar \"\$SONAR_APP_JAR\" \\\\\n"; \
@@ -107,14 +117,15 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
 # Switch back to sonarqube user for security
 USER sonarqube
 
-# Environment variables optimized for modern deployments
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
-ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ParallelRefProcEnabled"
+# Environment variables optimized for Railway and containers
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport"
 
-# Security and compatibility flags
-ENV RUN_AS_ROOT=false
+# Railway compatibility flags
+ENV RUN_AS_ROOT=true
 ENV SONAR_TELEMETRY_ENABLE=false
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 
 # Expose default port
 EXPOSE 9000

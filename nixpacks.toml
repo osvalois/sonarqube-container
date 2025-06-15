@@ -1,0 +1,12 @@
+# Disable Nixpacks completely - force Docker usage
+[phases.setup]
+nixPkgs = []
+
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = []
+
+[variables]
+NIXPACKS_NO_INSTALL = "1"
