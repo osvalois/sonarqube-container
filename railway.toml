@@ -20,7 +20,7 @@ SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bo
 
 # Java optimization
 JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-JAVA_TOOL_OPTIONS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75.0"
 
 # JVM memory settings
 SONAR_WEB_JAVAOPTS = "-Xmx1g -Xms512m -XX:+UseSerialGC"

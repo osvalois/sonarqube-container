@@ -37,6 +37,15 @@ WARN app[][o.s.a.c.CommandFactoryImpl] JAVA_TOOL_OPTIONS is defined but will be 
 WARN app[][o.s.a.c.CommandFactoryImpl] ES_JAVA_OPTS is defined but will be ignored
 ```
 
+### Problema adicional con recolectores de basura (15/06/2025)
+Después de los primeros cambios, surgió un nuevo error relacionado con múltiples recolectores de basura seleccionados:
+```
+Error occurred during initialization of VM
+Multiple garbage collectors selected
+```
+
+Este error ocurre porque JAVA_TOOL_OPTIONS estaba configurando un recolector de basura que entraba en conflicto con el UseSerialGC especificado en otras configuraciones.
+
 ## Soluciones Implementadas
 
 ### Solución original
@@ -92,6 +101,17 @@ WARN app[][o.s.a.c.CommandFactoryImpl] ES_JAVA_OPTS is defined but will be ignor
 - Corregido las variables de entorno para que sean consistentes con sonar.properties
 - Asegurado que los parámetros Java se aplican correctamente
 
+### Solución al conflicto de recolectores de basura (15/06/2025)
+
+#### 1. Eliminación de opciones de GC conflictivas
+- Eliminado `-XX:+UseContainerSupport` de la variable JAVA_TOOL_OPTIONS
+- Mantenido solo `-XX:MaxRAMPercentage=75.0` en JAVA_TOOL_OPTIONS
+- Conservado `-XX:+UseSerialGC` en las configuraciones específicas de cada componente
+
+#### 2. Prevención de conflictos
+- Actualizado el script start-railway.sh para exportar JAVA_TOOL_OPTIONS sin opciones GC conflictivas
+- Asegurado que cada componente (Web, CE, Search) usa su propio recolector de basura explícito
+
 ## Beneficios de las Soluciones
 
 ### Beneficios de la solución original
@@ -106,6 +126,11 @@ WARN app[][o.s.a.c.CommandFactoryImpl] ES_JAVA_OPTS is defined but will be ignor
 3. **Recursos adecuados**: Asignación de memoria apropiada para Elasticsearch
 4. **Rendimiento mejorado**: Optimización de JVM para el entorno Railway
 
+### Beneficios de la solución al conflicto de GC
+1. **Arranque estable**: Eliminación de errores de inicialización de la JVM
+2. **Consistencia de GC**: Cada componente usa un recolector de basura adecuado
+3. **Optimización de recursos**: Mantenimiento de la configuración de porcentaje de RAM
+
 ## Resultado Esperado
 
 Estas soluciones optimizadas deberían resolver completamente los errores en Railway al:
@@ -116,5 +141,6 @@ Estas soluciones optimizadas deberían resolver completamente los errores en Rai
 4. Aumentar los tiempos de espera para dar tiempo a SonarQube de iniciar completamente
 5. Asegurar que Elasticsearch reciba suficiente memoria para operar correctamente
 6. Corregir configuraciones contradictorias que causaban conflictos en las variables de entorno
+7. Eliminar conflictos entre múltiples recolectores de basura que impedían el arranque de la JVM
 
 La aplicación ahora debería construirse, desplegarse y funcionar correctamente en Railway sin errores.

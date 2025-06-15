@@ -34,6 +34,8 @@ fi
 
 # Export critical variables for Elasticsearch
 export ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseSerialGC -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+# Prevent GC conflicts
+export JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 
 # Database connection check
 if [ -n "${SONAR_JDBC_URL:-}" ]; then
