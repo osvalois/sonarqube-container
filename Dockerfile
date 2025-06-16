@@ -1,7 +1,7 @@
 # Use SonarQube Community Edition - Version 10.6 for compatibility
 # Enhanced with AI Code Assurance, Advanced Security, and modern DevSecOps features
 # Optimized for both local development and Railway deployment
-FROM sonarqube:10.6-community
+FROM sonarqube:25.6.0.109173-community
 
 # Build arguments for metadata
 ARG BUILD_DATE
