@@ -1,6 +1,6 @@
-# Use SonarQube Community Build - Version 24.12 for migration
+# Use SonarQube Community Build - Version 25.5.0.107428
 # Optimized for Railway deployment
-FROM sonarqube:24.12.0.100206-community
+FROM sonarqube:25.5.0.107428-community
 
 # Build arguments for metadata
 ARG BUILD_DATE
@@ -17,8 +17,8 @@ LABEL org.opencontainers.image.source="https://github.com/osvalois/sonarqube-con
 LABEL org.opencontainers.image.version="${BUILD_VERSION}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
 LABEL org.opencontainers.image.vendor="Oscar Valois"
-LABEL org.opencontainers.image.title="SonarQube DevSecOps 24.12 for Railway"
-LABEL org.opencontainers.image.description="SonarQube Community Build 24.12 optimized for Railway deployment"
+LABEL org.opencontainers.image.title="SonarQube DevSecOps 25.5 for Railway"
+LABEL org.opencontainers.image.description="SonarQube Community Build 25.5.0.107428 optimized for Railway deployment"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
 

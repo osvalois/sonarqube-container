@@ -2,7 +2,7 @@
 set -e
 
 # Variables
-VERSION="latest"
+VERSION="25.5.0.107428"
 IMAGE_NAME="sonarqube-railway"
 DOCKERFILE="Dockerfile.railway"
 
@@ -16,7 +16,7 @@ docker login
 
 # Pull base image first to ensure it exists
 echo "Pulling base SonarQube image..."
-docker pull sonarqube:community
+docker pull sonarqube:25.5.0.107428-community
 
 # Build the custom image
 echo "Building custom SonarQube image..."
