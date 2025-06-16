@@ -1,7 +1,7 @@
-# Use SonarQube Community Edition - Version 10.6 for compatibility
+# Use SonarQube Community Build - Latest version 25.6.0
 # Enhanced with AI Code Assurance, Advanced Security, and modern DevSecOps features
 # Optimized for both local development and Railway deployment
-FROM sonarqube:10.6-community
+FROM sonarqube:community
 
 # Build arguments for metadata
 ARG BUILD_DATE
@@ -18,8 +18,8 @@ LABEL org.opencontainers.image.source="https://github.com/osvalois/sonarqube-con
 LABEL org.opencontainers.image.version="${BUILD_VERSION}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
 LABEL org.opencontainers.image.vendor="Oscar Valois"
-LABEL org.opencontainers.image.title="SonarQube DevSecOps 10.6"
-LABEL org.opencontainers.image.description="SonarQube 10.6 with AI-powered code analysis and advanced security features"
+LABEL org.opencontainers.image.title="SonarQube DevSecOps 25.6"
+LABEL org.opencontainers.image.description="SonarQube Community Build 25.6 with AI-powered code analysis and advanced security features"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
 
@@ -116,8 +116,8 @@ RUN { \
         printf "    exit 1\n"; \
         printf "fi\n"; \
         printf "\n"; \
-        printf "echo \"Starting SonarQube 10.6 with: \$SONAR_APP_JAR\"\n"; \
-        printf "echo \"Container optimized for 10.6 with Railway support\"\n"; \
+        printf "echo \"Starting SonarQube 25.6 with: \$SONAR_APP_JAR\"\n"; \
+        printf "echo \"Container optimized for 25.6 with Railway support\"\n"; \
         printf "echo \"Port: \${PORT:-8080}\"\n"; \
         printf "echo \"Database: \${SONAR_JDBC_URL:-Not configured}\"\n"; \
         printf "\n"; \

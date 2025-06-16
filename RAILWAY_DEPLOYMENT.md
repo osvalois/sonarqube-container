@@ -1,6 +1,6 @@
-# Desplegando SonarQube en Railway
+# Desplegando SonarQube Community Build 25.6 en Railway
 
-Este documento proporciona información y recomendaciones para desplegar SonarQube en Railway.
+Este documento proporciona información y recomendaciones para desplegar SonarQube Community Build 25.6 en Railway.
 
 ## Requisitos de recursos
 
