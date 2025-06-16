@@ -31,7 +31,8 @@ RUN set -eux; \
         ca-certificates \
         gnupg \
         lsb-release \
-        procps && \
+        procps \
+        gosu && \
     rm -rf /var/lib/apt/lists/*
 
 # Create all required directories and ensure they have proper permissions
