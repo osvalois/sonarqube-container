@@ -36,13 +36,8 @@ else
 fi
 
 # Find the sonar-application JAR dynamically
-# Look for version 24.12 first, then fall back to any version if not found
-SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-24.12*.jar" -type f | head -1)
-
-# Fall back to any version if 24.12 not found
-if [ -z "$SONAR_APP_JAR" ]; then
-    SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
-fi
+# Look for any available JAR file with the right pattern
+SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
 
 if [ -z "$SONAR_APP_JAR" ]; then
     echo "ERROR: Could not find sonar-application JAR file"
