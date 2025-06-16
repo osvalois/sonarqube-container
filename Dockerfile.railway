@@ -37,9 +37,24 @@ RUN set -eux; \
 
 # Create all required directories and ensure they have proper permissions
 RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensions \
-    /opt/sonarqube/logs /opt/sonarqube/temp && \
+    /opt/sonarqube/extensions/plugins /opt/sonarqube/logs /opt/sonarqube/temp \
+    /opt/sonarqube/reports && \
     chmod -R 777 /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensions \
-    /opt/sonarqube/logs /opt/sonarqube/temp
+    /opt/sonarqube/extensions/plugins /opt/sonarqube/logs /opt/sonarqube/temp \
+    /opt/sonarqube/reports
+
+# Download and install CNES Report Plugin for SonarQube 25.5
+RUN set -eux; \
+    # Install CNES Report Plugin (version compatible with SonarQube 25.x)
+    wget -O "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar" \
+        "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.1/sonar-cnes-report-5.0.1.jar" && \
+    # Verify download
+    ls -la "/opt/sonarqube/extensions/plugins/" && \
+    # Set proper permissions
+    chmod 644 "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar"
+
+# Copy CNES Report configuration
+COPY cnes-report-config.properties /opt/sonarqube/conf/cnes-report.properties
 
 # Create SonarQube configuration for Railway
 COPY start-railway.sh /usr/local/bin/start-railway.sh
