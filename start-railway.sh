@@ -35,17 +35,27 @@ else
     echo "Running with current user permissions..."
 fi
 
+# Find the sonar-application JAR dynamically
+SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
+
+if [ -z "$SONAR_APP_JAR" ]; then
+    echo "ERROR: Could not find sonar-application JAR file"
+    exit 1
+fi
+
+echo "Found SonarQube application JAR: $SONAR_APP_JAR"
+
 # Check which privilege downgrade tool is available (su-exec or gosu)
 if command -v su-exec >/dev/null 2>&1; then
     echo "Using su-exec for privilege downgrade"
-    DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
+    DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 elif command -v gosu >/dev/null 2>&1; then
     echo "Using gosu for privilege downgrade"
-    DEFAULT_CMD=('gosu' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
+    DEFAULT_CMD=('gosu' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 else
     # Fallback to direct execution when neither su-exec nor gosu is available
     echo "Neither su-exec nor gosu found, falling back to direct execution with current user"
-    DEFAULT_CMD=('/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
+    DEFAULT_CMD=('/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 fi
 
 # this if will check if the first argument is a flag
