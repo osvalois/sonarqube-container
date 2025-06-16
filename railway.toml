@@ -23,8 +23,8 @@ JAVA_OPTS = "-XX:MaxRAMPercentage=50.0"
 JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=50.0"
 
 # JVM memory settings - reduced for Railway constraints
-SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
+SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m -javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar=web"
+SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m -javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar=ce"
 SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
 # Network settings

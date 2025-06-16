@@ -43,15 +43,27 @@ RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensio
     /opt/sonarqube/extensions/plugins /opt/sonarqube/logs /opt/sonarqube/temp \
     /opt/sonarqube/reports
 
-# Download and install CNES Report Plugin for SonarQube 25.5
+# Download and install plugins for SonarQube 25.5
 RUN set -eux; \
     # Install CNES Report Plugin (version compatible with SonarQube 25.x)
     wget -O "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar" \
         "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.1/sonar-cnes-report-5.0.1.jar" && \
-    # Verify download
+    # Install Community Branch Plugin (version compatible with SonarQube 25.x)
+    wget -O "/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar" \
+        "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.25.0/sonarqube-community-branch-plugin-1.25.0.jar" && \
+    # Download community branch webapp file
+    wget -O "/tmp/sonarqube-webapp.zip" \
+        "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.25.0/sonarqube-webapp.zip" && \
+    # Extract webapp files
+    mkdir -p /opt/sonarqube/web && \
+    unzip -o /tmp/sonarqube-webapp.zip -d /opt/sonarqube/web && \
+    rm -f /tmp/sonarqube-webapp.zip && \
+    # Verify downloads
     ls -la "/opt/sonarqube/extensions/plugins/" && \
     # Set proper permissions
-    chmod 644 "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar"
+    chmod 644 "/opt/sonarqube/extensions/plugins/"*.jar && \
+    chmod -R 755 /opt/sonarqube/web && \
+    chown -R 1000:0 /opt/sonarqube/web
 
 # Copy CNES Report configuration
 COPY cnes-report-config.properties /opt/sonarqube/conf/cnes-report.properties
