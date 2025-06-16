@@ -15,17 +15,17 @@ startupTimeout = 1800
 [env]
 # Elasticsearch bootstrap configuration
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
-# Java optimization - removed GC settings to avoid conflicts
-JAVA_OPTS = "-XX:MaxRAMPercentage=75.0"
-JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75.0"
+# Java optimization - reduced memory usage
+JAVA_OPTS = "-XX:MaxRAMPercentage=50.0"
+JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=50.0"
 
-# JVM memory settings - removed GC settings to avoid conflicts
-SONAR_WEB_JAVAOPTS = "-Xmx1g -Xms512m"
-SONAR_CE_JAVAOPTS = "-Xmx1g -Xms512m"
-SONAR_SEARCH_JAVAOPTS = "-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false"
+# JVM memory settings - reduced for Railway constraints
+SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
+SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
+SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
 # Network settings
 SONAR_WEB_PORT = "9000"
