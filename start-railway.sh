@@ -1,96 +1,47 @@
 #!/bin/bash
-# Railway-specific startup script for SonarQube
+set -e
 
-set -euo pipefail
-
-echo "🚀 Starting SonarQube for Railway deployment - divine-intuition"
-echo "📍 Instance: divine-intuition (8 vCPU, 8GB RAM)"
-echo "🌐 Domain: sonarqube-container-production-a7e6.up.railway.app"
-echo "🔌 Port: ${PORT:-9000}"
-
-# Critical directories for SonarQube
-mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp /opt/sonarqube/temp/conf/es
-chmod -R 777 /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp
-
-# Create custom Elasticsearch config if it doesn't exist
-if [ ! -f "/opt/sonarqube/temp/conf/es/elasticsearch.yml" ]; then
-  echo "📝 Creating Elasticsearch configuration..."
-  cat > /opt/sonarqube/temp/conf/es/elasticsearch.yml << EOF
-# Railway-specific Elasticsearch configuration
-node.name: sonarqube
-cluster.name: sonarqube
-discovery.type: single-node
-cluster.routing.allocation.disk.threshold_enabled: false
-bootstrap.system_call_filter: false
-discovery.seed_hosts: 127.0.0.1
-network.host: 127.0.0.1
-transport.host: 127.0.0.1
-http.host: 127.0.0.1
-xpack.security.enabled: false
-action.auto_create_index: false
-node.store.allow_mmap: false
-bootstrap.memory_lock: false
-EOF
-  chmod 777 /opt/sonarqube/temp/conf/es/elasticsearch.yml
+# Sync port configuration with Railway
+if [ -n "$PORT" ]; then
+    export SONAR_WEB_PORT="$PORT"
 fi
 
-# Export critical variables for Elasticsearch - removed GC settings to avoid conflicts
-export ES_JAVA_OPTS="-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
-# Prevent GC conflicts by using only memory percentage
-export JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+# Try to increase vm.max_map_count if running with appropriate privileges
+if [ "$(id -u)" = "0" ]; then
+    echo "Checking vm.max_map_count setting..."
+    CURRENT_MAP_COUNT=$(sysctl -n vm.max_map_count 2>/dev/null || echo "unknown")
 
-# Database connection check
-if [ -n "${SONAR_JDBC_URL:-}" ]; then
-    echo "✅ Database URL configured: ${SONAR_JDBC_URL}"
+    if [ "$CURRENT_MAP_COUNT" = "unknown" ]; then
+        echo "WARNING: Could not check vm.max_map_count value."
+    elif [ "$CURRENT_MAP_COUNT" -lt 262144 ]; then
+        echo "Current vm.max_map_count is $CURRENT_MAP_COUNT (too low for Elasticsearch)"
+        echo "Attempting to set vm.max_map_count to 262144..."
+
+        if sysctl -w vm.max_map_count=262144 2>/dev/null; then
+            echo "Successfully set vm.max_map_count to 262144"
+        else
+            echo "WARNING: Could not set vm.max_map_count. Elasticsearch bootstrap may fail."
+        fi
+    else
+        echo "vm.max_map_count is already set to $CURRENT_MAP_COUNT (sufficient for Elasticsearch)"
+    fi
+fi
+
+# Change ownership of required directories to sonarqube user
+if [ "$(id -u)" = "0" ] && [ "${RUN_AS_ROOT}" != "true" ]; then
+    echo "Setting directory permissions for sonarqube user..."
+    chown -R sonarqube:sonarqube "$SQ_DATA_DIR" "$SQ_EXTENSIONS_DIR" "$SQ_LOGS_DIR" "$SQ_TEMP_DIR"
 else
-    echo "⚠️  No database URL configured. Using embedded H2 database (not recommended for production)"
+    echo "Running with current user permissions..."
 fi
 
-# Find the sonar-application JAR dynamically
-SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
+DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
 
-if [ -z "$SONAR_APP_JAR" ]; then
-    echo "❌ ERROR: Could not find sonar-application JAR file"
-    exit 1
+# this if will check if the first argument is a flag
+# but only works if all arguments require a hyphenated flag
+# -v; -SL; -f arg; etc will work, but not arg1 arg2
+if [ "$#" -eq 0 ] || [ "${1#-}" != "$1" ]; then
+    set -- "${DEFAULT_CMD[@]}" "$@"
 fi
 
-echo "📦 Found SonarQube JAR: $SONAR_APP_JAR"
-
-# Plugin verification
-echo "🔌 Verifying plugins..."
-ls -la /opt/sonarqube/extensions/plugins/
-
-# Memory settings display
-echo "🧠 Memory settings:"
-echo "JAVA_OPTS: ${JAVA_OPTS:-Not set}"
-echo "SONAR_WEB_JAVAOPTS: ${SONAR_WEB_JAVAOPTS:-Not set}"
-echo "SONAR_CE_JAVAOPTS: ${SONAR_CE_JAVAOPTS:-Not set}"
-echo "SONAR_SEARCH_JAVAOPTS: ${SONAR_SEARCH_JAVAOPTS:-Not set}"
-echo "ES_JAVA_OPTS: ${ES_JAVA_OPTS:-Not set}"
-
-# Elasticsearch settings
-echo "🔍 Elasticsearch configuration:"
-cat /opt/sonarqube/temp/conf/es/elasticsearch.yml
-
-# Add explicit paths to the JAVA_OPTS
-export JAVA_OPTS="${JAVA_OPTS} -Dsonar.path.data=/opt/sonarqube/data -Dsonar.path.logs=/opt/sonarqube/logs -Dsonar.path.temp=/opt/sonarqube/temp"
-
-# Start SonarQube with Railway-specific settings
-echo "🚀 Launching SonarQube with Railway-specific settings..."
-exec java \
-    -Djava.security.egd=file:/dev/./urandom \
-    -Dfile.encoding=UTF-8 \
-    ${JAVA_OPTS} \
-    -Dsonar.web.port=${PORT:-9000} \
-    -Dsonar.web.host=${SONAR_WEB_HOST:-0.0.0.0} \
-    -Dsonar.search.javaOpts="${SONAR_SEARCH_JAVAOPTS:-'-Xms512m -Xmx1g -XX:MaxDirectMemorySize=512m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false'}" \
-    -Dsonar.search.javaAdditionalOpts="-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false" \
-    -Dsonar.web.javaOpts="${SONAR_WEB_JAVAOPTS:-'-Xmx1g -Xms512m'}" \
-    -Dsonar.ce.javaOpts="${SONAR_CE_JAVAOPTS:-'-Xmx1g -Xms512m'}" \
-    -Dsonar.telemetry.enable=${SONAR_TELEMETRY_ENABLE:-false} \
-    -Dsonar.updatecenter.activate=${SONAR_UPDATECENTER_ACTIVATE:-false} \
-    -Dsonar.log.level=INFO \
-    -Dsonar.ce.workerCount=4 \
-    -Dsonar.cluster.enabled=false \
-    -Dsonar.es.bootstrap.checks.disable=${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE:-true} \
-    -jar "$SONAR_APP_JAR"
+exec "$@"
