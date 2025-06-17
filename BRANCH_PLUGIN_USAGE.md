@@ -1,4 +1,4 @@
-# Guía de Uso del Community Branch Plugin
+# Guía de Uso del Community Branch Plugin (v25.5.0)
 
 Este documento proporciona instrucciones para utilizar el Community Branch Plugin que ha sido instalado en la instancia de SonarQube Community Build 25.5.
 

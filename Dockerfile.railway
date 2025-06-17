@@ -47,8 +47,8 @@ RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensio
 
 # Download and install plugins for SonarQube 25.5
 RUN wget -O "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar" "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.1/sonar-cnes-report-5.0.1.jar"
-RUN wget -O "/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.25.0/sonarqube-community-branch-plugin-1.25.0.jar"
-RUN wget -O "/tmp/sonarqube-webapp.zip" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.25.0/sonarqube-webapp.zip"
+RUN wget -O "/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-community-branch-plugin-25.5.0.jar"
+RUN wget -O "/tmp/sonarqube-webapp.zip" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-webapp.zip"
 RUN mkdir -p /opt/sonarqube/web && \
     unzip -o /tmp/sonarqube-webapp.zip -d /opt/sonarqube/web && \
     rm -f /tmp/sonarqube-webapp.zip
