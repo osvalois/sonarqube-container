@@ -69,14 +69,14 @@ RUN chmod +x /usr/local/bin/start-railway.sh /usr/local/bin/setup-branch-plugin.
 
 # Default environment variables matching Railway configuration from railway.toml
 ENV RUN_AS_ROOT="true"
-ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
-ENV SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+ENV SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
 ENV SONAR_TELEMETRY_ENABLE="false"
 ENV SONAR_UPDATECENTER_ACTIVATE="false"
 ENV SONAR_WEB_HOST="0.0.0.0"
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
-ENV ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Use corrected entrypoint
 COPY correct-start.sh /usr/local/bin/correct-start.sh

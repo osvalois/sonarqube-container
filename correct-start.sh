@@ -29,8 +29,8 @@ sonar.community.branch.autoMerge=true
 sonar.branch.longLivedBranches.regex=(master|main|develop|release/.+|hotfix/.+)
 
 # Elasticsearch Configuration
-sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
-sonar.search.bootstrap.checks.disable=false
+sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
+sonar.search.bootstrap.checks.disable=true
 EOF
 
 # Establecer variables de entorno correctas según documentación oficial
@@ -51,12 +51,12 @@ export SONAR_WEB_JAVAOPTS="-Xmx512m -Xms256m -javaagent:$PLUGIN_JAR=web"
 export SONAR_CE_JAVAOPTS="-Xmx512m -Xms256m -javaagent:$PLUGIN_JAR=ce"
 
 # Configurar variables adicionales para Elasticsearch
-export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
-export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
-export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
+export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Configuración para Elasticsearch
-export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Otras configuraciones generales
 export SONAR_TELEMETRY_ENABLE="false"

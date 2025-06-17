@@ -11,16 +11,16 @@ fi
 mkdir -p /opt/sonarqube/conf
 cat > /opt/sonarqube/conf/es-config.properties << EOF
 # Elasticsearch Configuration
-es.enforce.bootstrap.checks=true
+es.enforce.bootstrap.checks=false
 es.bootstrap.system_call_filter=false
 es.node.store.allow_mmap=false
 EOF
 
 # Exportar variables de entorno necesarias
-export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
-export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
-export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
-export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
 
 echo "Configuración de Elasticsearch completada:"
 echo "ES_JAVA_OPTS: $ES_JAVA_OPTS"
