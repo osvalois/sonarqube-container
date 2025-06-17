@@ -10,8 +10,3 @@ cmds = []
 
 [variables]
 NIXPACKS_NO_INSTALL = "1"
-SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
-SONAR_SEARCH_JAVAOPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
-RUN_AS_ROOT = "true"

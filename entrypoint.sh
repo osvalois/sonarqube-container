@@ -35,13 +35,7 @@ else
     echo "Running with current user permissions..."
 fi
 
-# Configurar el plugin Community Branch si el script existe
-if [ -x "/usr/local/bin/bootstrap-branch-plugin.sh" ]; then
-    echo "Ejecutando bootstrap del Community Branch Plugin..."
-    /usr/local/bin/bootstrap-branch-plugin.sh
-fi
-
-DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
+DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' 'lib/sonar-application-2025.1.0.77975.jar' '-Dsonar.log.console=true')
 
 # this if will check if the first argument is a flag
 # but only works if all arguments require a hyphenated flag
