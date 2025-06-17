@@ -15,17 +15,20 @@ startupTimeout = 1800
 [env]
 # Elasticsearch bootstrap configuration
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
-SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE = "true"
+ES_JAVA_OPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
+SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
 
 # Java optimization - reduced memory usage
 JAVA_OPTS = "-XX:MaxRAMPercentage=50.0"
 JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=50.0"
 
 # JVM memory settings - reduced for Railway constraints
-SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+SONAR_WEB_JAVAADDITIONALOPTS = "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=web"
+SONAR_CE_JAVAADDITIONALOPTS = "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=ce"
+SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms512m"
+SONAR_CE_JAVAOPTS = "-Xmx512m -Xms512m"
+SONAR_SEARCH_JAVAOPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
 
 # Network settings
 SONAR_WEB_PORT = "9000"
@@ -40,7 +43,20 @@ SONAR_CLUSTER_ENABLED = "false"
 SONAR_LOG_LEVEL = "INFO"
 SONAR_FORCEAUTHENTICATION = "false"
 
+# Community Branch Plugin Settings
+SONAR_COMMUNITY_BRANCH_ENABLED = "true"
+SONAR_COMMUNITY_BRANCH_AUTOLOAD = "true"
+SONAR_BRANCH_LONGLIVEDBRACHES_REGEX = "(master|main|develop|release/.+|hotfix/.+)"
+
+# CNES Report Plugin configuration
+SONAR_PDF_REPORT_ENABLED = "true"
+SONAR_CNES_REPORT_EXPORTERS = "true"
+SONAR_CNES_REPORT_CONFIDENTIAL = "false"
+
 # Database settings
 SONAR_JDBC_URL = "jdbc:postgresql://ep-floral-bush-a5ns5s26-pooler.us-east-2.aws.neon.tech/shsonar?user=shsonar_owner&password=npg_3oPHcnhxz7er&sslmode=require"
 SONAR_JDBC_USERNAME = "shsonar_owner"
 SONAR_JDBC_PASSWORD = "npg_3oPHcnhxz7er"
+
+# Docker settings for Railway
+RUN_AS_ROOT = "true"
