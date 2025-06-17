@@ -76,7 +76,7 @@ ENV SONAR_UPDATECENTER_ACTIVATE="false"
 ENV SONAR_WEB_HOST="0.0.0.0"
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
-ENV ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Use corrected entrypoint
 COPY correct-start.sh /usr/local/bin/correct-start.sh

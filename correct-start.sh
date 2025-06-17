@@ -29,7 +29,7 @@ sonar.community.branch.autoMerge=true
 sonar.branch.longLivedBranches.regex=(master|main|develop|release/.+|hotfix/.+)
 
 # Elasticsearch Configuration
-sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
+sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
 sonar.search.bootstrap.checks.disable=true
 EOF
 
@@ -47,16 +47,16 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 # Estas variables también pueden ser útiles
-export SONAR_WEB_JAVAOPTS="-Xmx512m -Xms256m -javaagent:$PLUGIN_JAR=web"
-export SONAR_CE_JAVAOPTS="-Xmx512m -Xms256m -javaagent:$PLUGIN_JAR=ce"
+export SONAR_WEB_JAVAOPTS="-Xmx512m -Xms512m -javaagent:$PLUGIN_JAR=web"
+export SONAR_CE_JAVAOPTS="-Xmx512m -Xms512m -javaagent:$PLUGIN_JAR=ce"
 
 # Configurar variables adicionales para Elasticsearch
 export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
 export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
-export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Configuración para Elasticsearch
-export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Otras configuraciones generales
 export SONAR_TELEMETRY_ENABLE="false"
@@ -89,7 +89,7 @@ if command -v gosu >/dev/null 2>&1; then
       -Dsonar.web.javaAdditionalOpts="$SONAR_WEB_JAVAADDITIONALOPTS" \
       -Dsonar.ce.javaAdditionalOpts="$SONAR_CE_JAVAADDITIONALOPTS" \
       -Dsonar.search.javaOpts="$SONAR_SEARCH_JAVAOPTS" \
-      -Dsonar.search.bootstrap.checks.disable=false \
+      -Dsonar.search.bootstrap.checks.disable=true \
       -Des.enforce.bootstrap.checks=true \
       -Dsonar.log.console=true
 else
@@ -98,7 +98,7 @@ else
       -Dsonar.web.javaAdditionalOpts="$SONAR_WEB_JAVAADDITIONALOPTS" \
       -Dsonar.ce.javaAdditionalOpts="$SONAR_CE_JAVAADDITIONALOPTS" \
       -Dsonar.search.javaOpts="$SONAR_SEARCH_JAVAOPTS" \
-      -Dsonar.search.bootstrap.checks.disable=false \
+      -Dsonar.search.bootstrap.checks.disable=true \
       -Des.enforce.bootstrap.checks=true \
       -Dsonar.log.console=true
 fi
