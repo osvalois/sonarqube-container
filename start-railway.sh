@@ -35,6 +35,14 @@ else
     echo "Running with current user permissions..."
 fi
 
+# Configurar el plugin Community Branch
+echo "Configurando Community Branch Plugin..."
+if [ -x "/usr/local/bin/bootstrap-branch-plugin.sh" ]; then
+    /usr/local/bin/bootstrap-branch-plugin.sh
+else
+    echo "ADVERTENCIA: Script de configuración del plugin no encontrado"
+fi
+
 # Find the sonar-application JAR dynamically
 # Look for any available JAR file with the right pattern
 SONAR_APP_JAR=$(find /opt/sonarqube/lib -name "sonar-application-*.jar" -type f | head -1)
@@ -46,17 +54,23 @@ fi
 
 echo "Found SonarQube application JAR: $SONAR_APP_JAR"
 
+# Ensure JAVA_OPTS includes the JavaAgent for server
+if [[ "$JAVA_OPTS" != *"-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=server"* ]]; then
+    export JAVA_OPTS="$JAVA_OPTS -javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=server"
+    echo "Added JavaAgent to JAVA_OPTS: $JAVA_OPTS"
+fi
+
 # Check which privilege downgrade tool is available (su-exec or gosu)
 if command -v su-exec >/dev/null 2>&1; then
     echo "Using su-exec for privilege downgrade"
-    DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
+    DEFAULT_CMD=('su-exec' 'sonarqube' '/opt/java/openjdk/bin/java' '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 elif command -v gosu >/dev/null 2>&1; then
     echo "Using gosu for privilege downgrade"
-    DEFAULT_CMD=('gosu' 'sonarqube' '/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
+    DEFAULT_CMD=('gosu' 'sonarqube' '/opt/java/openjdk/bin/java' '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 else
     # Fallback to direct execution when neither su-exec nor gosu is available
     echo "Neither su-exec nor gosu found, falling back to direct execution with current user"
-    DEFAULT_CMD=('/opt/java/openjdk/bin/java' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
+    DEFAULT_CMD=('/opt/java/openjdk/bin/java' '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar' '-jar' "$SONAR_APP_JAR" '-Dsonar.log.console=true')
 fi
 
 # this if will check if the first argument is a flag

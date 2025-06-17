@@ -47,7 +47,7 @@ RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensio
 
 # Download and install plugins for SonarQube 25.5
 RUN wget -O "/opt/sonarqube/extensions/plugins/sonar-cnes-report.jar" "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.1/sonar-cnes-report-5.0.1.jar"
-RUN wget -O "/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-community-branch-plugin-25.5.0.jar"
+RUN wget -O "/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-community-branch-plugin-25.5.0.jar"
 RUN wget -O "/tmp/sonarqube-webapp.zip" "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/25.5.0/sonarqube-webapp.zip"
 RUN mkdir -p /opt/sonarqube/web && \
     unzip -o /tmp/sonarqube-webapp.zip -d /opt/sonarqube/web && \
@@ -55,23 +55,31 @@ RUN mkdir -p /opt/sonarqube/web && \
 RUN ls -la "/opt/sonarqube/extensions/plugins/"
 RUN chmod 644 "/opt/sonarqube/extensions/plugins/"*.jar && \
     chmod -R 755 /opt/sonarqube/web && \
-    chown -R 1000:0 /opt/sonarqube/web
+    chown -R 1000:0 /opt/sonarqube/web /opt/sonarqube/extensions/plugins
 
-# Copy CNES Report configuration
+# Copy configurations
 COPY cnes-report-config.properties /opt/sonarqube/conf/cnes-report.properties
 
 # Create SonarQube configuration for Railway
 COPY start-railway.sh /usr/local/bin/start-railway.sh
-RUN chmod +x /usr/local/bin/start-railway.sh
+COPY setup-branch-plugin.sh /usr/local/bin/setup-branch-plugin.sh
+COPY bootstrap-branch-plugin.sh /usr/local/bin/bootstrap-branch-plugin.sh
+COPY railway-init.sh /usr/local/bin/railway-init.sh
+RUN chmod +x /usr/local/bin/start-railway.sh /usr/local/bin/setup-branch-plugin.sh /usr/local/bin/bootstrap-branch-plugin.sh /usr/local/bin/railway-init.sh
 
 # Default environment variables matching Railway configuration from railway.toml
 ENV RUN_AS_ROOT="true"
-ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
+ENV SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
 ENV SONAR_TELEMETRY_ENABLE="false"
 ENV SONAR_UPDATECENTER_ACTIVATE="false"
 ENV SONAR_WEB_HOST="0.0.0.0"
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+ENV ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
-# Use Railway-optimized entrypoint
-ENTRYPOINT ["/usr/local/bin/start-railway.sh"]
+# Use corrected entrypoint
+COPY correct-start.sh /usr/local/bin/correct-start.sh
+COPY es-config.sh /usr/local/bin/es-config.sh
+RUN chmod +x /usr/local/bin/correct-start.sh /usr/local/bin/es-config.sh
+ENTRYPOINT ["/usr/local/bin/correct-start.sh"]
