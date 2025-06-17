@@ -5,6 +5,17 @@ echo "===================================================="
 echo "Iniciando SonarQube optimizado para Railway con Plugin de Branch"
 echo "===================================================="
 
+# Configurar sysctl para Elasticsearch si es posible
+if command -v sysctl &> /dev/null; then
+    echo "Configurando vm.max_map_count para Elasticsearch..."
+    sysctl -w vm.max_map_count=262144 || echo "ADVERTENCIA: No se pudo configurar vm.max_map_count"
+    echo "Valor actual de vm.max_map_count: $(sysctl -n vm.max_map_count 2>/dev/null || echo "no disponible")"
+fi
+
+# Configuración para bootstrap checks
+export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
+export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
+
 # Configurar el plugin Community Branch
 export PLUGIN_JAR=/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar
 
@@ -21,7 +32,7 @@ echo "Configurando JavaAgent para todos los componentes..."
 export JAVA_OPTS="-javaagent:$PLUGIN_JAR $JAVA_OPTS"
 export SONAR_WEB_JAVAOPTS="-javaagent:$PLUGIN_JAR $SONAR_WEB_JAVAOPTS"
 export SONAR_CE_JAVAOPTS="-javaagent:$PLUGIN_JAR $SONAR_CE_JAVAOPTS"
-export SONAR_SEARCH_JAVAOPTS="$SONAR_SEARCH_JAVAOPTS"
+export SONAR_SEARCH_JAVAOPTS="$SONAR_SEARCH_JAVAOPTS -Des.discovery.type=single-node"
 
 # Mostrar configuración para verificación
 echo "JAVA_OPTS: $JAVA_OPTS"

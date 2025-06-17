@@ -14,11 +14,12 @@ cat > /opt/sonarqube/conf/es-config.properties << EOF
 es.enforce.bootstrap.checks=true
 es.bootstrap.system_call_filter=false
 es.node.store.allow_mmap=false
+es.discovery.type=single-node
 EOF
 
 # Exportar variables de entorno necesarias
-export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
-export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
 export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
 export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
 

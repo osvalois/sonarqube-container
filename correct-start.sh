@@ -29,7 +29,7 @@ sonar.community.branch.autoMerge=true
 sonar.branch.longLivedBranches.regex=(master|main|develop|release/.+|hotfix/.+)
 
 # Elasticsearch Configuration
-sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
+sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node
 sonar.search.bootstrap.checks.disable=true
 EOF
 
@@ -53,10 +53,10 @@ export SONAR_CE_JAVAOPTS="-Xmx512m -Xms512m -javaagent:$PLUGIN_JAR=ce"
 # Configurar variables adicionales para Elasticsearch
 export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="true"
 export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
-export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
 
 # Configuración para Elasticsearch
-export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false -Des.discovery.type=single-node"
 
 # Otras configuraciones generales
 export SONAR_TELEMETRY_ENABLE="false"
