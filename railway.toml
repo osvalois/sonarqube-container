@@ -29,7 +29,6 @@ SONAR_CE_JAVAADDITIONALOPTS = "-javaagent:/opt/sonarqube/extensions/plugins/sona
 SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
 SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
 SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
-JAVA_OPTS = "-XX:MaxRAMPercentage=50.0"
 
 # Network settings
 SONAR_WEB_PORT = "9000"
