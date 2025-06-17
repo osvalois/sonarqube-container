@@ -16,7 +16,7 @@ startupTimeout = 1800
 # Elasticsearch bootstrap configuration
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "false"
 SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE = "false"
-ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+ES_JAVA_OPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Java optimization - reduced memory usage
@@ -28,7 +28,7 @@ SONAR_WEB_JAVAADDITIONALOPTS = "-javaagent:/opt/sonarqube/extensions/plugins/son
 SONAR_CE_JAVAADDITIONALOPTS = "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-25.5.0.jar=ce"
 SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
 SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+SONAR_SEARCH_JAVAOPTS = "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Network settings
 SONAR_WEB_PORT = "9000"

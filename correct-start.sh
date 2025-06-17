@@ -29,7 +29,7 @@ sonar.community.branch.autoMerge=true
 sonar.branch.longLivedBranches.regex=(master|main|develop|release/.+|hotfix/.+)
 
 # Elasticsearch Configuration
-sonar.search.javaOpts=-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
+sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false
 sonar.search.bootstrap.checks.disable=false
 EOF
 
@@ -40,7 +40,10 @@ export SONAR_CE_JAVAADDITIONALOPTS="-javaagent:$PLUGIN_JAR=ce"
 # Configurar vm.max_map_count para Elasticsearch
 if [ "$(id -u)" = "0" ]; then
     echo "Configurando vm.max_map_count para Elasticsearch..."
+    # Intentar aumentar el valor
     sysctl -w vm.max_map_count=262144 || echo "ADVERTENCIA: No se pudo configurar vm.max_map_count"
+    # Verificar valor actual
+    echo "Valor actual de vm.max_map_count: $(sysctl -n vm.max_map_count)"
 fi
 
 # Estas variables también pueden ser útiles
@@ -50,10 +53,10 @@ export SONAR_CE_JAVAOPTS="-Xmx512m -Xms256m -javaagent:$PLUGIN_JAR=ce"
 # Configurar variables adicionales para Elasticsearch
 export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
 export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
-export ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Configuración para Elasticsearch
-export SONAR_SEARCH_JAVAOPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 
 # Otras configuraciones generales
 export SONAR_TELEMETRY_ENABLE="false"

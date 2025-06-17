@@ -17,8 +17,8 @@ es.node.store.allow_mmap=false
 EOF
 
 # Exportar variables de entorno necesarias
-export ES_JAVA_OPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
-export SONAR_SEARCH_JAVAOPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
+export SONAR_SEARCH_JAVAOPTS="-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=true -Des.bootstrap.system_call_filter=false -Des.node.store.allow_mmap=false"
 export SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="false"
 export SONAR_SEARCH_BOOTSTRAP_CHECKS_DISABLE="false"
 
