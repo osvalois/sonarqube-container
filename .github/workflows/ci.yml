@@ -106,7 +106,7 @@ jobs:
         with:
           sarif_file: 'checkov-results.sarif'
       - name: Run KICS scan
-        uses: checkmarx/kics-github-action@v1.7.0
+        uses: checkmarx/kics-github-action@v2.1.11
         with:
           path: '.'
           output_path: kics-results
