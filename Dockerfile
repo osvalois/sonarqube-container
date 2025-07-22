@@ -1,7 +1,7 @@
 # Use SonarQube Community Build - Version 25.5.0.107428
 # Enhanced with AI Code Assurance, Advanced Security, and modern DevSecOps features
 # Optimized for both local development and Railway deployment
-FROM sonarqube:25.5.0.107428-community
+FROM sonarqube:25.7.0.110598-community
 
 # Build arguments for metadata
 ARG BUILD_DATE
