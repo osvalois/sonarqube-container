@@ -1,0 +1,129 @@
+---
+services:
+  sonarqube:
+    image: sonarqube:25.5.0.107428-community
+    container_name: sonarqube-production
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+    environment:
+      # Database Configuration
+      - SONAR_JDBC_URL=${SONAR_JDBC_URL}
+      - SONAR_JDBC_USERNAME=${SONAR_JDBC_USERNAME}
+      - SONAR_JDBC_PASSWORD=${SONAR_JDBC_PASSWORD}
+      - SONAR_JDBC_MAXACTIVE=${SONAR_JDBC_MAXACTIVE:-60}
+      - SONAR_JDBC_MAXIDLE=${SONAR_JDBC_MAXIDLE:-5}
+      - SONAR_JDBC_MINIDLE=${SONAR_JDBC_MINIDLE:-2}
+      - SONAR_JDBC_MAXWAIT=${SONAR_JDBC_MAXWAIT:-5000}
+      - SONAR_JDBC_CONNECTIONTIMEOUT=${SONAR_JDBC_CONNECTIONTIMEOUT:-30000}
+      
+      # SonarQube Configuration
+      - SONAR_WEB_HOST=${SONAR_WEB_HOST}
+      - SONAR_WEB_PORT=${SONAR_WEB_PORT}
+      - SONAR_WEB_CONTEXT=${SONAR_WEB_CONTEXT}
+      - SONAR_FORCEAUTHENTICATION=${SONAR_FORCEAUTHENTICATION}
+      
+      # Performance Settings
+      - SONAR_WEB_JAVAOPTS=${SONAR_WEB_JAVAOPTS}
+      - SONAR_CE_JAVAOPTS=${SONAR_CE_JAVAOPTS}
+      - SONAR_SEARCH_JAVAOPTS=${SONAR_SEARCH_JAVAOPTS}
+      
+      # Elasticsearch Configuration
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=${SONAR_ES_BOOTSTRAP_CHECKS_DISABLE}
+      - SONAR_SEARCH_JAVA_ADDITIONAL_OPTS=${SONAR_SEARCH_JAVA_ADDITIONAL_OPTS}
+      
+      # Security Settings
+      - SONAR_TELEMETRY_ENABLE=${SONAR_TELEMETRY_ENABLE}
+      - SONAR_UPDATECENTER_ACTIVATE=${SONAR_UPDATECENTER_ACTIVATE}
+      
+      # Timezone
+      - TZ=UTC
+    
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    
+    volumes:
+      # Persistent data volumes
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
+      - sonarqube_reports:/opt/sonarqube/reports
+      
+      # Mount plugins from local directory
+      - ./plugins:/opt/sonarqube/extensions/plugins:ro
+    
+    networks:
+      - sonarqube-network
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '${DEPLOY_CPU_LIMIT:-2}'
+          memory: ${DEPLOY_MEMORY_LIMIT:-4G}
+        reservations:
+          cpus: '${DEPLOY_CPU_RESERVATION:-1}'
+          memory: ${DEPLOY_MEMORY_RESERVATION:-2G}
+
+  # Optional: PostgreSQL connection tester
+  db-test:
+    image: postgres:15-alpine
+    container_name: sonarqube-db-test
+    profiles: ["testing"]
+    environment:
+      - PGPASSWORD=${SONAR_JDBC_PASSWORD}
+    command: >
+      sh -c "
+        echo 'Testing database connection...' &&
+        psql '${SONAR_JDBC_URL}' -c 'SELECT version();' &&
+        echo '✅ Database connection successful!' ||
+        echo '❌ Database connection failed!'
+      "
+    networks:
+      - sonarqube-network
+
+networks:
+  sonarqube-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+
+volumes:
+  sonarqube_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/volumes/data
+  sonarqube_extensions:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/volumes/extensions
+  sonarqube_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/volumes/logs
+  sonarqube_temp:
+    driver: local
+  sonarqube_reports:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/volumes/reports

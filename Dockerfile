@@ -78,15 +78,52 @@ RUN { \
         echo "sonar.search.initialStateTimeout=120"; \
     } > /usr/local/bin/sonar-config.properties;
 
-# Download and install official SonarQube report plugins
+# Download and install SonarQube plugins for enhanced functionality
 RUN set -eux; \
+    # Create plugins directory if it doesn't exist
+    mkdir -p "${SONARQUBE_HOME}/extensions/plugins"; \
     # Install CNES Report Plugin (latest version supporting SonarQube 10.x)
-    wget -O "${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-plugin.jar" \
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-cnes-report-plugin.jar" \
         "https://github.com/cnescatlab/sonar-cnes-report/releases/download/5.0.2/sonar-cnes-report-5.0.2.jar"; \
-    # Verify download
+    # Install Community Branch Plugin for branch/PR analysis (supports SonarQube 10.x)
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-community-branch-plugin.jar" \
+        "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.19.0/sonarqube-community-branch-plugin-1.19.0.jar"; \
+    # Install Rust Plugin for Rust language support
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/community-rust-plugin.jar" \
+        "https://github.com/C4tWithShell/community-rust/releases/download/v0.2.6/community-rust-plugin-0.2.6.jar"; \
+    # Install Flutter/Dart Plugin
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-flutter-plugin.jar" \
+        "https://github.com/insideapp-oss/sonar-flutter/releases/download/0.5.2/sonar-flutter-plugin-0.5.2.jar"; \
+    # Install GitLab Plugin for better GitLab integration
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-gitlab-plugin.jar" \
+        "https://github.com/gabrie-allaigre/sonar-gitlab-plugin/releases/download/4.1.0-SNAPSHOT/sonar-gitlab-plugin-4.1.0-SNAPSHOT.jar"; \
+    # Install YAML Plugin for YAML file analysis
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-yaml-plugin.jar" \
+        "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.9.1/sonar-yaml-plugin-1.9.1.jar"; \
+    # Install ShellCheck Plugin for shell script analysis
+    wget --no-check-certificate --progress=bar:force:noscroll \
+        -O "${SONARQUBE_HOME}/extensions/plugins/sonar-shellcheck-plugin.jar" \
+        "https://github.com/sbaudoin/sonar-shellcheck/releases/download/v2.5.0/sonar-shellcheck-plugin-2.5.0.jar"; \
+    # Verify downloads
     ls -la "${SONARQUBE_HOME}/extensions/plugins/"; \
+    # Check each plugin exists and is not empty
+    for plugin in sonar-cnes-report-plugin.jar sonar-community-branch-plugin.jar community-rust-plugin.jar \
+                  sonar-flutter-plugin.jar sonar-gitlab-plugin.jar sonar-yaml-plugin.jar sonar-shellcheck-plugin.jar; do \
+        if [ ! -s "${SONARQUBE_HOME}/extensions/plugins/${plugin}" ]; then \
+            echo "ERROR: Plugin ${plugin} download failed or is empty"; \
+            exit 1; \
+        fi; \
+    done; \
     # Set proper permissions
-    chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins";
+    chown -R 1000:0 "${SONARQUBE_HOME}/extensions/plugins"; \
+    chmod -R 755 "${SONARQUBE_HOME}/extensions/plugins"; \
+    chmod 644 "${SONARQUBE_HOME}/extensions/plugins/"*.jar;
 
 # Create optimized entrypoint script with health checks and graceful shutdown
 RUN { \
@@ -137,13 +174,17 @@ RUN { \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
     CMD curl -fs http://localhost:${PORT:-8080}/api/system/status || exit 1
 
+# Copy Railway-specific startup script and make it executable (as root)
+COPY start-railway.sh /usr/local/bin/start-railway.sh
+RUN chmod +x /usr/local/bin/start-railway.sh
+
 # Switch back to sonarqube user for security
 USER sonarqube
 
 # Environment variables optimized for Railway and containers
 ENV SONAR_WEB_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
 ENV SONAR_CE_JAVAADDITIONALOPTS="-XX:+UseContainerSupport -XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
-ENV SONAR_SEARCH_JAVAADDITIONALOPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m"
+ENV SONAR_SEARCH_JAVAADDITIONALOPTS="-Xmx1g -Xms512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false"
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport"
 
 # Railway compatibility flags
@@ -151,12 +192,12 @@ ENV RUN_AS_ROOT=true
 ENV SONAR_TELEMETRY_ENABLE=false
 ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
 
+# Additional Elasticsearch configuration
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
+ENV discovery.type=single-node
+
 # Expose default port
 EXPOSE 8080
-
-# Copy Railway-specific startup script and make it executable
-COPY start-railway.sh /usr/local/bin/start-railway.sh
-RUN chmod +x /usr/local/bin/start-railway.sh
 
 # Use the optimized entrypoint - Railway will override with start-railway.sh if needed
 ENTRYPOINT ["/usr/local/bin/start-railway.sh"]

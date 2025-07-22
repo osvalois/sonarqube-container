@@ -8,8 +8,8 @@ services:
         BUILD_DATE: ${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
         BUILD_VERSION: ${BUILD_VERSION:-2025.3}
         VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD)}
-    image: sonarqube-devsecops:2025-latest
-    container_name: sonarqube-2025
+    image: sonarqube-enhanced:latest
+    container_name: sonarqube-2025-h2
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -20,14 +20,15 @@ services:
       retries: 5
       start_period: 300s
     environment:
+      # Use H2 embedded database (only for testing/development)
+      - SONAR_EMBEDDEDDATABASE_PORT=9092
+      # Elasticsearch configuration - Fix memory settings
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-      - discovery.type=single-node
-      - SONAR_SEARCH_JAVA_ADDITIONAL_OPTS=-Des.enforce.bootstrap.checks=false
-      - bootstrap.system_call_filter=false
-      - bootstrap.memory_lock=false
-    env_file:
-      - .env
+      - SONAR_SEARCH_JAVAOPTS=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
+      - SONAR_SEARCH_JAVA_ADDITIONAL_OPTS=-Des.enforce.bootstrap.checks=false -Des.discovery.type=single-node
+      # Web and CE memory settings
+      - SONAR_WEB_JAVAOPTS=-Xmx512m -Xms256m
+      - SONAR_CE_JAVAOPTS=-Xmx512m -Xms256m
     ulimits:
       memlock:
         soft: -1
@@ -43,21 +44,10 @@ services:
       - sonarqube_reports:/opt/sonarqube/reports
     networks:
       - sonarqube-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
 
 networks:
   sonarqube-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
 
 volumes:
   sonarqube_data:
