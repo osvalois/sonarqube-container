@@ -1,6 +1,6 @@
 # Use SonarQube Community Build - Version 25.5.0.107428
 # Optimized for Railway deployment
-FROM sonarqube:25.5.0.107428-community
+FROM sonarqube:25.7.0.110598-community
 
 # Build arguments for metadata
 ARG BUILD_DATE
