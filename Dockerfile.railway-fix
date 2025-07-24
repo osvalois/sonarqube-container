@@ -1,0 +1,33 @@
+# SonarQube Community Edition - Optimized for Railway without Elasticsearch
+FROM sonarqube:25.5.0.107428-community
+
+USER root
+
+# Install minimal dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create required directories with full permissions
+RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp && \
+    chmod -R 777 /opt/sonarqube
+
+# Copy custom start script
+COPY start-railway-fix.sh /opt/sonarqube/bin/start-railway.sh
+RUN chmod +x /opt/sonarqube/bin/start-railway.sh
+
+# Copy sonar.properties template
+COPY sonar-railway.properties /opt/sonarqube/conf/sonar.properties.template
+
+# Set environment for Railway
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+    SONAR_SEARCH_JAVAADDITIONALOPTS="-Dnode.store.allow_mmap=false" \
+    SONAR_WEB_SYSTEMPASSCODE=admin \
+    RUN_AS_ROOT=true
+
+EXPOSE 9000
+
+# Use custom entrypoint
+ENTRYPOINT ["/opt/sonarqube/bin/start-railway.sh"]
