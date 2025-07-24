@@ -13,23 +13,23 @@ rootDirectory = "."
 startupTimeout = 1800
 
 [env]
-# Elasticsearch bootstrap configuration
+# Elasticsearch bootstrap configuration - Ultra-low memory for Railway
 SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
-SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+ES_JAVA_OPTS = "-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false -Des.node.data=true -Des.cluster.name=sonarqube -Des.discovery.type=single-node"
 
-# Java optimization - reduced memory usage
-JAVA_OPTS = "-XX:MaxRAMPercentage=50.0"
-JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=50.0"
+# Java optimization - consistent memory usage
+JAVA_OPTS = "-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
+JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
 
-# JVM memory settings - reduced for Railway constraints
-SONAR_WEB_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_CE_JAVAOPTS = "-Xmx512m -Xms256m"
-SONAR_SEARCH_JAVAOPTS = "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
+# JVM memory settings - optimized for Railway's 512MB limit
+SONAR_WEB_JAVAOPTS = "-Xmx256m -Xms128m -XX:+UseG1GC"
+SONAR_CE_JAVAOPTS = "-Xmx256m -Xms128m -XX:+UseG1GC"
+SONAR_SEARCH_JAVAOPTS = "-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m -XX:+UseG1GC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
 
-# Network settings
-SONAR_WEB_PORT = "9000"
-PORT = "9000"
+# Network settings - Use Railway's PORT variable
+SONAR_WEB_PORT = "${PORT}"
+PORT = "${PORT}"
 SONAR_WEB_HOST = "0.0.0.0"
 SONAR_WEB_CONTEXT = "/"
 
