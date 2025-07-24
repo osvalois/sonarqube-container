@@ -1,0 +1,43 @@
+# SonarQube Developer Edition alternative (no embedded ES)
+FROM sonarqube:25.5.0.107428-developer
+
+USER root
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        jq && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create startup script that disables embedded search
+COPY start-without-es.sh /opt/sonarqube/bin/run.sh
+RUN chmod +x /opt/sonarqube/bin/run.sh
+
+# Create sonar.properties
+RUN cat > /opt/sonarqube/conf/sonar.properties << 'EOF'
+# Disable embedded Elasticsearch
+sonar.search.host=disabled
+sonar.cluster.enabled=false
+sonar.cluster.search.disabled=true
+
+# Web settings
+sonar.web.host=0.0.0.0
+sonar.web.port=9000
+sonar.web.javaOpts=-Xmx768m -Xms256m
+
+# CE settings  
+sonar.ce.javaOpts=-Xmx768m -Xms256m
+
+# Database (configured at runtime)
+sonar.jdbc.maxActive=20
+sonar.jdbc.maxIdle=5
+
+# Features
+sonar.telemetry.enable=false
+sonar.updatecenter.activate=false
+EOF
+
+ENV RUN_AS_ROOT=true
+
+ENTRYPOINT ["/opt/sonarqube/bin/run.sh"]

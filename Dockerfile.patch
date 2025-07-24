@@ -1,0 +1,36 @@
+# SonarQube with aggressive patching for Railway
+FROM sonarqube:25.5.0.107428-community
+
+USER root
+
+# Install tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        sed \
+        grep \
+        findutils && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /opt/sonarqube/conf /opt/patches && \
+    chmod -R 777 /opt/sonarqube
+
+# Copy patch script
+COPY patch-sonarqube.sh /opt/patches/patch-sonarqube.sh
+RUN chmod +x /opt/patches/patch-sonarqube.sh
+
+# Create custom sonar.properties
+RUN echo '# Railway optimized configuration' > /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.search.javaOpts=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m -XX:+HeapDumpOnOutOfMemoryError' >> /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.search.javaAdditionalOpts=-Des.enforce.bootstrap.checks=false -Des.node.store.allow_mmap=false' >> /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.web.javaOpts=-Xmx400m -Xms128m -XX:+HeapDumpOnOutOfMemoryError' >> /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.ce.javaOpts=-Xmx400m -Xms128m -XX:+HeapDumpOnOutOfMemoryError' >> /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.web.port=9000' >> /opt/sonarqube/conf/sonar.properties && \
+    echo 'sonar.web.host=0.0.0.0' >> /opt/sonarqube/conf/sonar.properties
+
+# Set environment
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+    RUN_AS_ROOT=true
+
+# Use custom entrypoint
+ENTRYPOINT ["/opt/patches/patch-sonarqube.sh"]
