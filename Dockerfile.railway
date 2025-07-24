@@ -1,58 +1,38 @@
-# Use SonarQube Community Build - Version 25.5.0.107428
-# Optimized for Railway deployment
 FROM sonarqube:25.5.0.107428-community
 
-# Build arguments for metadata
-ARG BUILD_DATE
-ARG BUILD_VERSION
-ARG VCS_REF
-
-# Switch to root for installation
 USER root
 
-# Metadata following OCI Image Specification
-LABEL org.opencontainers.image.created="${BUILD_DATE}"
-LABEL org.opencontainers.image.url="https://github.com/osvalois/sonarqube-container"
-LABEL org.opencontainers.image.source="https://github.com/osvalois/sonarqube-container"
-LABEL org.opencontainers.image.version="${BUILD_VERSION}"
-LABEL org.opencontainers.image.revision="${VCS_REF}"
-LABEL org.opencontainers.image.vendor="Oscar Valois"
-LABEL org.opencontainers.image.title="SonarQube DevSecOps 25.5 for Railway"
-LABEL org.opencontainers.image.description="SonarQube Community Build 25.5.0.107428 optimized for Railway deployment"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL maintainer="Oscar Valois <osvaloismtz@gmail.com>"
-
-# Install dependencies with security updates
-RUN set -eux; \
-    apt-get update && \
-    apt-get upgrade -y && \
+# Install required packages
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
-        ca-certificates \
-        gnupg \
-        lsb-release \
-        procps \
-        gosu && \
+        jq \
+        sed && \
     rm -rf /var/lib/apt/lists/*
 
-# Create all required directories and ensure they have proper permissions
-RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensions \
-    /opt/sonarqube/logs /opt/sonarqube/temp && \
-    chmod -R 777 /opt/sonarqube/data /opt/sonarqube/data/es7 /opt/sonarqube/extensions \
-    /opt/sonarqube/logs /opt/sonarqube/temp
+# Create all required directories
+RUN mkdir -p /opt/sonarqube/data /opt/sonarqube/extensions /opt/sonarqube/logs /opt/sonarqube/temp && \
+    chmod -R 777 /opt/sonarqube
 
-# Create SonarQube configuration for Railway
-COPY start-railway.sh /usr/local/bin/start-railway.sh
-RUN chmod +x /usr/local/bin/start-railway.sh
+# Copy custom configuration
+COPY sonar-properties-override.conf /opt/sonarqube/conf/sonar.properties
+COPY elasticsearch-wrapper.sh /opt/sonarqube/elasticsearch/bin/elasticsearch-wrapper
+COPY start-sonarqube-railway.sh /opt/sonarqube/bin/run.sh
 
-# Default environment variables matching Railway configuration from railway.toml
-ENV RUN_AS_ROOT="true"
-ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE="true"
-ENV SONAR_TELEMETRY_ENABLE="false"
-ENV SONAR_UPDATECENTER_ACTIVATE="false"
-ENV SONAR_WEB_HOST="0.0.0.0"
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+# Make scripts executable
+RUN chmod +x /opt/sonarqube/elasticsearch/bin/elasticsearch-wrapper && \
+    chmod +x /opt/sonarqube/bin/run.sh
 
-# Use Railway-optimized entrypoint
-ENTRYPOINT ["/usr/local/bin/start-railway.sh"]
+# Replace original elasticsearch with wrapper
+RUN mv /opt/sonarqube/elasticsearch/bin/elasticsearch /opt/sonarqube/elasticsearch/bin/elasticsearch.original && \
+    ln -s /opt/sonarqube/elasticsearch/bin/elasticsearch-wrapper /opt/sonarqube/elasticsearch/bin/elasticsearch
+
+# Set environment
+ENV SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+    RUN_AS_ROOT=true \
+    SONAR_SEARCH_JAVA_OPTS="-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m" \
+    SONAR_SEARCH_JAVA_ADDITIONAL_OPTS="-Des.enforce.bootstrap.checks=false"
+
+EXPOSE 9000
+
+ENTRYPOINT ["/opt/sonarqube/bin/run.sh"]

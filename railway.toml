@@ -4,43 +4,17 @@ dockerfilePath = "Dockerfile.railway"
 
 [deploy]
 healthcheckPath = "/api/system/status"
-healthcheckTimeout = 1800
-healthcheckInterval = 90
+healthcheckTimeout = 300
+healthcheckInterval = 30
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
+restartPolicyMaxRetries = 3
 numReplicas = 1
-rootDirectory = "."
-startupTimeout = 1800
 
 [env]
-# Elasticsearch bootstrap configuration - Ultra-low memory for Railway
-SONAR_ES_BOOTSTRAP_CHECKS_DISABLE = "true"
-ES_JAVA_OPTS = "-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
-SONAR_SEARCH_JAVA_ADDITIONAL_OPTS = "-Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false -Des.node.data=true -Des.cluster.name=sonarqube -Des.discovery.type=single-node"
-
-# Java optimization - consistent memory usage
-JAVA_OPTS = "-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
-JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
-
-# JVM memory settings - optimized for Railway's 512MB limit
-SONAR_WEB_JAVAOPTS = "-Xmx256m -Xms128m -XX:+UseG1GC"
-SONAR_CE_JAVAOPTS = "-Xmx256m -Xms128m -XX:+UseG1GC"
-SONAR_SEARCH_JAVAOPTS = "-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m -XX:+UseG1GC -Des.enforce.bootstrap.checks=false -Des.bootstrap.system_call_filter=false -Des.bootstrap.checks=false -Des.node.store.allow_mmap=false"
-
-# Network settings - Use Railway's PORT variable
-SONAR_WEB_PORT = "${PORT}"
-PORT = "${PORT}"
+# Minimal environment variables - let wrapper scripts handle memory
 SONAR_WEB_HOST = "0.0.0.0"
-SONAR_WEB_CONTEXT = "/"
-
-# Feature settings
 SONAR_TELEMETRY_ENABLE = "false"
 SONAR_UPDATECENTER_ACTIVATE = "false"
-SONAR_CLUSTER_ENABLED = "false"
-SONAR_LOG_LEVEL = "INFO"
-SONAR_FORCEAUTHENTICATION = "false"
 
-# Database settings
-SONAR_JDBC_URL = "jdbc:postgresql://ep-floral-bush-a5ns5s26-pooler.us-east-2.aws.neon.tech/shsonar?user=shsonar_owner&password=npg_3oPHcnhxz7er&sslmode=require"
-SONAR_JDBC_USERNAME = "shsonar_owner"
-SONAR_JDBC_PASSWORD = "npg_3oPHcnhxz7er"
+# Database configuration from Railway
+SONAR_JDBC_URL = "${DATABASE_URL}"
